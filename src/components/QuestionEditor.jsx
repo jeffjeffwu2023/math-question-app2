@@ -20,7 +20,7 @@ const QuestionEditor = ({ onContentChange }) => {
           toolbar: [
             [{ header: [1, 2, false] }],
             ["bold", "italic", "underline"],
-            ["mathlive", "fraction", "exponent"], // Add exponent button
+            ["mathlive", "fraction", "exponent", "sqrt"], // Add square root button
             ["clean"],
           ],
           mathlive: {},

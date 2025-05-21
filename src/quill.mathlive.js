@@ -108,8 +108,31 @@ toolbar.DEFAULTS.handlers = {
         quill.insertText(insertIndex, spaceBefore);
         insertIndex += 1;
       }
-      // Insert a math-field with a pre-filled exponent
       quill.insertEmbed(insertIndex, "mathlive", "a^b");
+      const mathFieldLength = 1;
+      insertIndex += mathFieldLength;
+      const contentAfter = quill.getText(insertIndex);
+      if (!contentAfter.startsWith(" ")) {
+        quill.insertText(insertIndex, " ");
+        insertIndex += 1;
+      }
+      quill.setSelection(insertIndex);
+    }
+  },
+  sqrt: function () {
+    const quill = this.quill;
+    const range = quill.getSelection();
+    if (range) {
+      let insertIndex = range.index;
+      const contentBefore = quill.getText(0, insertIndex);
+      let spaceBefore = "";
+      if (contentBefore.length > 0 && !contentBefore.endsWith(" ")) {
+        spaceBefore = " ";
+        quill.insertText(insertIndex, spaceBefore);
+        insertIndex += 1;
+      }
+      // Insert a math-field with a pre-filled square root
+      quill.insertEmbed(insertIndex, "mathlive", "\\sqrt{a}");
       const mathFieldLength = 1;
       insertIndex += mathFieldLength;
       const contentAfter = quill.getText(insertIndex);
