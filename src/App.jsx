@@ -53,6 +53,42 @@ function App() {
               Add or edit question categories
             </p>
           </Link>
+          <Link
+            to="/answer-one-by-one"
+            className="block p-4 bg-blue-50 rounded-lg shadow-sm hover:bg-blue-100 transition-colors duration-200 text-center"
+            aria-label="Answer One by One"
+          >
+            <h2 className="text-subheading font-semibold text-blue-700">
+              Answer One by One
+            </h2>
+            <p className="text-body-md text-gray-600 mt-1">
+              Practice questions sequentially
+            </p>
+          </Link>
+          <Link
+            to="/answer-homework/1" // Example assignment ID, adjust as needed
+            className="block p-4 bg-green-50 rounded-lg shadow-sm hover:bg-green-100 transition-colors duration-200 text-center"
+            aria-label="Answer Homework"
+          >
+            <h2 className="text-subheading font-semibold text-green-700">
+              Answer Homework
+            </h2>
+            <p className="text-body-md text-gray-600 mt-1">
+              Complete assigned homework questions
+            </p>
+          </Link>
+          <Link
+            to="/assign-homework"
+            className="block p-4 bg-purple-50 rounded-lg shadow-sm hover:bg-purple-100 transition-colors duration-200 text-center"
+            aria-label="Assign Homework"
+          >
+            <h2 className="text-subheading font-semibold text-purple-700">
+              Assign Homework
+            </h2>
+            <p className="text-body-md text-gray-600 mt-1">
+              Assign questions to students
+            </p>
+          </Link>
         </div>
       </div>
     </div>
