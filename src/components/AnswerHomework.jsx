@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQuestions } from "../context/QuestionContext.jsx";
 import { useStudentAnswers } from "../context/StudentAnswerContext.jsx";
+import { useStudents } from "../context/StudentContext.jsx";
 import QuestionPreview from "./QuestionPreview.jsx";
 
 function AnswerHomework() {
@@ -10,6 +11,7 @@ function AnswerHomework() {
   const { questions } = useQuestions();
   const { answers, saveAnswer, assignments, submitAssignment } =
     useStudentAnswers();
+  const { students } = useStudents();
 
   const assignment = assignments.find((a) => a.id === parseInt(assignmentId));
   if (!assignment) {
@@ -35,6 +37,9 @@ function AnswerHomework() {
       </div>
     );
   }
+
+  const student = students.find((s) => s.id === assignment.studentId);
+  const studentName = student ? student.name : "Unknown Student";
 
   const assignmentQuestions = questions.filter((_, index) =>
     assignment.questionIndices.includes(index)
@@ -100,7 +105,7 @@ function AnswerHomework() {
       <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6 sm:p-8 transition-all duration-300">
         {/* Heading */}
         <h1 className="text-heading-lg sm:text-heading-lg font-extrabold text-center text-gray-800 mb-6 sm:mb-8 tracking-tight">
-          Homework Assignment
+          Homework Assignment for {studentName}
         </h1>
 
         {/* Back to Dashboard Link */}

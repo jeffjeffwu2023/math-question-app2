@@ -89,6 +89,18 @@ function App() {
               Assign questions to students
             </p>
           </Link>
+          <Link
+            to="/student-management"
+            className="block p-4 bg-orange-50 rounded-lg shadow-sm hover:bg-orange-100 transition-colors duration-200 text-center"
+            aria-label="Manage Students"
+          >
+            <h2 className="text-subheading font-semibold text-orange-700">
+              Student Management
+            </h2>
+            <p className="text-body-md text-gray-600 mt-1">
+              Add or edit students
+            </p>
+          </Link>
         </div>
       </div>
     </div>

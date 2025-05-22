@@ -3,14 +3,16 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuestions } from "../context/QuestionContext.jsx";
 import { useStudentAnswers } from "../context/StudentAnswerContext.jsx";
-import QuestionPreview from "./QuestionPreview.jsx"; // Add this import
+import { useStudents } from "../context/StudentContext.jsx";
+import QuestionPreview from "./QuestionPreview.jsx";
 
 function AssignHomework() {
   const { questions } = useQuestions();
   const { assignHomework } = useStudentAnswers();
+  const { students } = useStudents();
 
   const [selectedQuestions, setSelectedQuestions] = useState([]);
-  const [studentId, setStudentId] = useState(""); // Placeholder for student ID
+  const [selectedStudentId, setSelectedStudentId] = useState(""); // Use dropdown instead of manual input
 
   const handleQuestionToggle = (index) => {
     setSelectedQuestions((prev) =>
@@ -19,18 +21,18 @@ function AssignHomework() {
   };
 
   const handleAssign = () => {
-    if (!studentId.trim()) {
-      alert("Please enter a student ID.");
+    if (!selectedStudentId) {
+      alert("Please select a student.");
       return;
     }
     if (selectedQuestions.length === 0) {
       alert("Please select at least one question.");
       return;
     }
-    assignHomework(selectedQuestions, studentId);
-    alert(`Homework assigned to student ${studentId}!`);
+    assignHomework(selectedQuestions, selectedStudentId);
+    alert(`Homework assigned to student ${selectedStudentId}!`);
     setSelectedQuestions([]);
-    setStudentId("");
+    setSelectedStudentId("");
   };
 
   return (
@@ -52,19 +54,24 @@ function AssignHomework() {
           </Link>
         </div>
 
-        {/* Student ID */}
+        {/* Student Selection */}
         <div className="mb-6">
           <label className="block text-body-md font-semibold text-gray-700 mb-2">
-            Student ID
+            Select Student
           </label>
-          <input
-            type="text"
-            value={studentId}
-            onChange={(e) => setStudentId(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 text-gray-800 placeholder-gray-400 transition-all duration-200 text-body-md"
-            placeholder="Enter student ID"
-            aria-label="Student ID"
-          />
+          <select
+            value={selectedStudentId}
+            onChange={(e) => setSelectedStudentId(e.target.value)}
+            className="w-full px-4 py-3 border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 text-gray-800 bg-white transition-all duration-200 text-body-md"
+            aria-label="Select Student"
+          >
+            <option value="">Select a student</option>
+            {students.map((student) => (
+              <option key={student.id} value={student.id}>
+                {student.name} ({student.id})
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Questions List */}
