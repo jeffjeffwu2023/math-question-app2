@@ -10,7 +10,7 @@ function AddQuestion() {
   const { categories } = useCategories();
   const { addQuestion } = useQuestions();
 
-  const [questionTitle, setQuestionTitle] = useState(""); // Reintroduce questionTitle state
+  const [questionTitle, setQuestionTitle] = useState("");
   const [questionContent, setQuestionContent] = useState("");
   const [difficulty, setDifficulty] = useState("easy");
   const [questionCategory, setQuestionCategory] = useState(
@@ -23,7 +23,7 @@ function AddQuestion() {
       return;
     }
     const newQuestion = {
-      title: questionTitle, // Include title in the saved question
+      title: questionTitle,
       content: questionContent,
       difficulty,
       category: questionCategory,
@@ -31,7 +31,6 @@ function AddQuestion() {
     addQuestion(newQuestion);
     console.log("Saving question:", newQuestion);
     alert("Question saved (logged to console)!");
-    // Reset form after saving
     setQuestionTitle("");
     setQuestionContent("");
     setDifficulty("easy");
@@ -49,7 +48,7 @@ function AddQuestion() {
         {/* Back to Dashboard Link */}
         <div className="mb-6">
           <Link
-            to="/"
+            to="/admin-dashboard" // Updated to point to admin dashboard
             className="text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200 text-body-md"
             aria-label="Back to Dashboard"
           >

@@ -17,7 +17,7 @@ function ListQuestions() {
         {/* Back to Dashboard Link */}
         <div className="mb-6">
           <Link
-            to="/"
+            to="/admin-dashboard" // Updated to point to admin dashboard
             className="text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200 text-body-md"
             aria-label="Back to Dashboard"
           >
@@ -42,8 +42,11 @@ function ListQuestions() {
                   className="p-4 bg-gray-50 rounded-lg shadow-sm border border-gray-200"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <div className="flex-1 text-body-md">
-                      <div className="text-gray-800">
+                    <div className="flex-1">
+                      <h3 className="text-subheading font-semibold text-gray-800 mb-2">
+                        {question.title}
+                      </h3>
+                      <div className="text-body-md text-gray-800">
                         <QuestionPreview content={question.content} />
                       </div>
                       <div className="mt-2 text-body-sm text-gray-600">

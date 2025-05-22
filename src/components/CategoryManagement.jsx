@@ -54,7 +54,7 @@ function CategoryManagement() {
         {/* Back to Dashboard Link */}
         <div className="mb-6">
           <Link
-            to="/"
+            to="/admin-dashboard" // Updated to point to admin dashboard
             className="text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200 text-body-md"
             aria-label="Back to Dashboard"
           >

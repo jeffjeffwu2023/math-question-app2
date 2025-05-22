@@ -12,7 +12,7 @@ function AssignHomework() {
   const { students } = useStudents();
 
   const [selectedQuestions, setSelectedQuestions] = useState([]);
-  const [selectedStudentId, setSelectedStudentId] = useState(""); // Use dropdown instead of manual input
+  const [selectedStudentId, setSelectedStudentId] = useState("");
 
   const handleQuestionToggle = (index) => {
     setSelectedQuestions((prev) =>
@@ -46,7 +46,7 @@ function AssignHomework() {
         {/* Back to Dashboard Link */}
         <div className="mb-6">
           <Link
-            to="/"
+            to="/admin-dashboard" // Updated to point to admin dashboard
             className="text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200 text-body-md"
             aria-label="Back to Dashboard"
           >

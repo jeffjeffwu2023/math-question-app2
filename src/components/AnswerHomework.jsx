@@ -26,7 +26,7 @@ function AnswerHomework() {
           </p>
           <div className="mt-6 text-center">
             <Link
-              to="/"
+              to="/student-dashboard" // Updated to point to student dashboard
               className="text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200 text-body-md"
               aria-label="Back to Dashboard"
             >
@@ -88,7 +88,7 @@ function AnswerHomework() {
           </p>
           <div className="mt-6 text-center">
             <Link
-              to="/"
+              to="/student-dashboard" // Updated to point to student dashboard
               className="text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200 text-body-md"
               aria-label="Back to Dashboard"
             >
@@ -111,7 +111,7 @@ function AnswerHomework() {
         {/* Back to Dashboard Link */}
         <div className="mb-6">
           <Link
-            to="/"
+            to="/student-dashboard" // Updated to point to student dashboard
             className="text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200 text-body-md"
             aria-label="Back to Dashboard"
           >
