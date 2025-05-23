@@ -7,8 +7,15 @@ export function QuestionProvider({ children }) {
   const [questions, setQuestions] = useState([]);
 
   const addQuestion = (newQuestion) => {
-    setQuestions([...questions, newQuestion]);
+    setQuestions((prev) => {
+      const updatedQuestions = [...prev, newQuestion];
+      console.log("Adding question:", newQuestion); // Debug log
+      console.log("Updated questions array:", updatedQuestions); // Debug log
+      return updatedQuestions;
+    });
   };
+
+  console.log("QuestionContext - Current questions:", questions); // Debug log
 
   return (
     <QuestionContext.Provider value={{ questions, addQuestion }}>

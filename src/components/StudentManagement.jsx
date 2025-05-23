@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useStudents } from "../context/StudentContext.jsx";
+import { showToast } from "../utils/toast.js"; // Import toast utility
 
 function StudentManagement() {
   const { students, addStudent, editStudent, deleteStudent } = useStudents();
@@ -20,12 +21,15 @@ function StudentManagement() {
       !newStudent.name.trim() ||
       !newStudent.email.trim()
     ) {
-      alert("Please fill in all fields.");
+      showToast("Please fill in all fields.", "error");
       return;
     }
     const success = addStudent(newStudent);
     if (success) {
       setNewStudent({ id: "", name: "", email: "" });
+      showToast("Student added successfully!", "success");
+    } else {
+      showToast("Student ID already exists!", "error");
     }
   };
 
@@ -40,18 +44,22 @@ function StudentManagement() {
       !editStudentData.name.trim() ||
       !editStudentData.email.trim()
     ) {
-      alert("Please fill in all fields.");
+      showToast("Please fill in all fields.", "error");
       return;
     }
     const success = editStudent(editId, editStudentData);
     if (success) {
       setEditId(null);
       setEditStudentData({ id: "", name: "", email: "" });
+      showToast("Student updated successfully!", "success");
+    } else {
+      showToast("Student ID already exists!", "error");
     }
   };
 
   const handleDelete = (id) => {
     deleteStudent(id);
+    showToast("Student deleted successfully!", "success");
   };
 
   return (
@@ -65,7 +73,7 @@ function StudentManagement() {
         {/* Back to Dashboard Link */}
         <div className="mb-6">
           <Link
-            to="/admin-dashboard" // Updated to point to admin dashboard
+            to="/admin-dashboard"
             className="text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200 text-body-md"
             aria-label="Back to Dashboard"
           >

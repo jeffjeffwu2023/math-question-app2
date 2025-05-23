@@ -8,6 +8,8 @@ import { StudentAnswerProvider } from "./context/StudentAnswerContext.jsx";
 import { StudentProvider } from "./context/StudentContext.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import { ToastContainer } from "react-toastify"; // Import ToastContainer
+import "react-toastify/dist/ReactToastify.css"; // Import react-toastify CSS
 import App from "./App.jsx";
 import AddQuestion from "./components/AddQuestion.jsx";
 import CategoryManagement from "./components/CategoryManagement.jsx";
@@ -108,6 +110,18 @@ ReactDOM.createRoot(document.getElementById("root")).render(
                   }
                 />
               </Routes>
+              <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="light"
+              />
             </AuthProvider>
           </StudentProvider>
         </StudentAnswerProvider>

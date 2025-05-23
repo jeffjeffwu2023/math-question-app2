@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useCategories } from "../context/CategoryContext.jsx";
+import { showToast } from "../utils/toast.js"; // Import toast utility
 
 function CategoryManagement() {
   const { categories, addCategory, editCategory, deleteCategory } =
@@ -13,12 +14,15 @@ function CategoryManagement() {
 
   const handleAddCategory = () => {
     if (!newCategory.trim()) {
-      alert("Please enter a category name.");
+      showToast("Please enter a category name.", "error");
       return;
     }
     const success = addCategory(newCategory.trim());
     if (success) {
       setNewCategory("");
+      showToast("Category added successfully!", "success");
+    } else {
+      showToast("Category already exists!", "error");
     }
   };
 
@@ -29,18 +33,26 @@ function CategoryManagement() {
 
   const handleEditSave = () => {
     if (!editValue.trim()) {
-      alert("Please enter a category name.");
+      showToast("Please enter a category name.", "error");
       return;
     }
     const success = editCategory(editIndex, editValue.trim());
     if (success) {
       setEditIndex(null);
       setEditValue("");
+      showToast("Category updated successfully!", "success");
+    } else {
+      showToast("Category already exists!", "error");
     }
   };
 
   const handleDelete = (category) => {
-    deleteCategory(category);
+    const success = deleteCategory(category);
+    if (success) {
+      showToast("Category deleted successfully!", "success");
+    } else {
+      showToast("You must have at least one category!", "error");
+    }
   };
 
   return (
@@ -54,7 +66,7 @@ function CategoryManagement() {
         {/* Back to Dashboard Link */}
         <div className="mb-6">
           <Link
-            to="/admin-dashboard" // Updated to point to admin dashboard
+            to="/admin-dashboard"
             className="text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200 text-body-md"
             aria-label="Back to Dashboard"
           >

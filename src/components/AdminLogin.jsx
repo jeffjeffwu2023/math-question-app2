@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
+import { showToast } from "../utils/toast.js"; // Import toast utility
 
 function AdminLogin() {
   const { login } = useAuth();
@@ -13,16 +14,17 @@ function AdminLogin() {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    // Placeholder: Simple admin authentication (in a real app, use a backend)
     const adminCredentials = { id: "admin123", password: "adminpass" };
     if (
       adminId === adminCredentials.id &&
       password === adminCredentials.password
     ) {
       login({ id: adminId, role: "admin", name: "Admin" });
+      showToast("Welcome, Admin!", "success");
       navigate("/admin-dashboard");
     } else {
       setError("Invalid admin ID or password. Please try again.");
+      showToast("Invalid admin ID or password. Please try again.", "error");
     }
   };
 

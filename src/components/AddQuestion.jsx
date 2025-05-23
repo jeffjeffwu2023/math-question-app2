@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useCategories } from "../context/CategoryContext.jsx";
 import { useQuestions } from "../context/QuestionContext.jsx";
+import { showToast } from "../utils/toast.js"; // Import toast utility
 import QuestionEditor from "./QuestionEditor.jsx";
 import QuestionPreview from "./QuestionPreview.jsx";
 
@@ -19,7 +20,10 @@ function AddQuestion() {
 
   const handleSave = () => {
     if (!questionTitle.trim() || !questionContent.trim()) {
-      alert("Please enter a question title and content before saving.");
+      showToast(
+        "Please enter a question title and content before saving.",
+        "error"
+      );
       return;
     }
     const newQuestion = {
@@ -30,7 +34,7 @@ function AddQuestion() {
     };
     addQuestion(newQuestion);
     console.log("Saving question:", newQuestion);
-    alert("Question saved (logged to console)!");
+    showToast("Question saved successfully!", "success");
     setQuestionTitle("");
     setQuestionContent("");
     setDifficulty("easy");
@@ -48,7 +52,7 @@ function AddQuestion() {
         {/* Back to Dashboard Link */}
         <div className="mb-6">
           <Link
-            to="/admin-dashboard" // Updated to point to admin dashboard
+            to="/admin-dashboard"
             className="text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200 text-body-md"
             aria-label="Back to Dashboard"
           >

@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { useQuestions } from "../context/QuestionContext.jsx";
 import { useStudentAnswers } from "../context/StudentAnswerContext.jsx";
 import { useStudents } from "../context/StudentContext.jsx";
+import { showToast } from "../utils/toast.js";
 import QuestionPreview from "./QuestionPreview.jsx";
 
 function AssignHomework() {
@@ -14,6 +15,10 @@ function AssignHomework() {
   const [selectedQuestions, setSelectedQuestions] = useState([]);
   const [selectedStudentId, setSelectedStudentId] = useState("");
 
+  // Debug logs to check context data
+  console.log("AssignHomework - Questions:", questions);
+  console.log("AssignHomework - Students:", students);
+
   const handleQuestionToggle = (index) => {
     setSelectedQuestions((prev) =>
       prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
@@ -22,15 +27,17 @@ function AssignHomework() {
 
   const handleAssign = () => {
     if (!selectedStudentId) {
-      alert("Please select a student.");
+      showToast("Please select a student.", "error");
       return;
     }
     if (selectedQuestions.length === 0) {
-      alert("Please select at least one question.");
+      showToast("Please select at least one question.", "error");
       return;
     }
     assignHomework(selectedQuestions, selectedStudentId);
-    alert(`Homework assigned to student ${selectedStudentId}!`);
+    const student = students.find((s) => s.id === selectedStudentId);
+    const studentName = student ? student.name : selectedStudentId;
+    showToast(`Homework assigned to ${studentName}!`, "success");
     setSelectedQuestions([]);
     setSelectedStudentId("");
   };
@@ -46,7 +53,7 @@ function AssignHomework() {
         {/* Back to Dashboard Link */}
         <div className="mb-6">
           <Link
-            to="/admin-dashboard" // Updated to point to admin dashboard
+            to="/admin-dashboard"
             className="text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200 text-body-md"
             aria-label="Back to Dashboard"
           >

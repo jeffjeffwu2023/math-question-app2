@@ -10,13 +10,21 @@ function StudentDashboard() {
   const { students } = useStudents();
 
   // Use the logged-in user's ID
-  const loggedInStudentId = user ? user.id : "student123";
+  const loggedInStudentId = user ? user.id : null;
   const student = students.find((s) => s.id === loggedInStudentId);
   const studentName = student ? student.name : "Student";
 
   // Filter assignments for the logged-in student
   const studentAssignments = assignments.filter(
     (assignment) => assignment.studentId === loggedInStudentId
+  );
+
+  // Debug logs
+  console.log("StudentDashboard - Logged-in student ID:", loggedInStudentId);
+  console.log("StudentDashboard - All assignments:", assignments);
+  console.log(
+    "StudentDashboard - Filtered student assignments:",
+    studentAssignments
   );
 
   const handleLogout = () => {

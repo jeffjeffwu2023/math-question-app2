@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useStudents } from "../context/StudentContext.jsx";
+import { showToast } from "../utils/toast.js"; // Import toast utility
 
 function StudentLogin() {
   const { login } = useAuth();
@@ -14,14 +15,14 @@ function StudentLogin() {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    console.log(students);
-    
     const student = students.find((s) => s.id === studentId.trim());
     if (student) {
       login({ id: student.id, role: "student", name: student.name });
+      showToast(`Welcome, ${student.name}!`, "success");
       navigate("/student-dashboard");
     } else {
       setError("Student ID not found. Please try again.");
+      showToast("Student ID not found. Please try again.", "error");
     }
   };
 

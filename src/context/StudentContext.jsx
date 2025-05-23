@@ -1,36 +1,52 @@
 // src/context/StudentContext.jsx
 import { createContext, useContext, useState } from "react";
+import { showToast } from "../utils/toast.js";
 
 const StudentContext = createContext();
 
 export function StudentProvider({ children }) {
-  const [students, setStudents] = useState([]); // [{ id: string, name: string, email: string }]
+  const [students, setStudents] = useState([]);
 
   const addStudent = (student) => {
     if (students.some((s) => s.id === student.id)) {
-      alert("Student ID already exists!");
+      showToast("Student ID already exists!", "error");
       return false;
     }
-    setStudents([...students, student]);
+    setStudents((prev) => {
+      const updatedStudents = [...prev, student];
+      console.log("Adding student:", student); // Debug log
+      console.log("Updated students array:", updatedStudents); // Debug log
+      return updatedStudents;
+    });
     return true;
   };
 
   const editStudent = (id, updatedStudent) => {
     if (students.some((s) => s.id === updatedStudent.id && s.id !== id)) {
-      alert("Student ID already exists!");
+      showToast("Student ID already exists!", "error");
       return false;
     }
-    setStudents(
-      students.map((student) =>
+    setStudents((prev) => {
+      const updatedStudents = prev.map((student) =>
         student.id === id ? { ...student, ...updatedStudent } : student
-      )
-    );
+      );
+      console.log("Editing student ID:", id, "with data:", updatedStudent); // Debug log
+      console.log("Updated students array:", updatedStudents); // Debug log
+      return updatedStudents;
+    });
     return true;
   };
 
   const deleteStudent = (id) => {
-    setStudents(students.filter((student) => student.id !== id));
+    setStudents((prev) => {
+      const updatedStudents = prev.filter((student) => student.id !== id);
+      console.log("Deleting student ID:", id); // Debug log
+      console.log("Updated students array:", updatedStudents); // Debug log
+      return updatedStudents;
+    });
   };
+
+  console.log("StudentContext - Current students:", students); // Debug log
 
   return (
     <StudentContext.Provider
