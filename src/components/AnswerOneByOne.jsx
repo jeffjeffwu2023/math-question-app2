@@ -1,18 +1,20 @@
 // src/components/AnswerOneByOne.jsx
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useQuestions } from "../context/QuestionContext.jsx";
-import { useStudentAnswers } from "../context/StudentAnswerContext.jsx";
-import QuestionPreview from "./QuestionPreview.jsx";
+import { useQuestions } from "../context/QuestionContext";
+import { useStudentAnswers } from "../context/StudentAnswerContext";
+import QuestionPreview from "./QuestionPreview";
+import { evaluateAnswer } from "../services/api";
+import { showToast } from "../utils/toast";
 
 function AnswerOneByOne() {
   const { questions } = useQuestions();
   const { answers, saveAnswer } = useStudentAnswers();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [studentAnswer, setStudentAnswer] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Load the student's previous answer for the current question, if any
     if (answers[currentIndex]) {
       setStudentAnswer(answers[currentIndex].answer);
     } else {
@@ -20,11 +22,28 @@ function AnswerOneByOne() {
     }
   }, [currentIndex, answers]);
 
-  const handleSubmit = () => {
-    // Simple validation for demo purposes (in a real app, compare against a correct answer)
-    const isCorrect = studentAnswer.trim().length > 0; // Placeholder logic
-    saveAnswer(currentIndex, studentAnswer, isCorrect);
-    setStudentAnswer("");
+  const handleSubmit = async () => {
+    if (!studentAnswer.trim()) {
+      showToast("Please enter an answer.", "error");
+      return;
+    }
+    setLoading(true);
+    try {
+      const currentQuestion = questions[currentIndex];
+      const prompt = `Evaluate if the student's answer "${studentAnswer}" is correct for the math question "${currentQuestion.title}" with content "${currentQuestion.content}". Provide a boolean result (true/false).`;
+      const response = await evaluateAnswer(prompt);
+      const isCorrect = response.data.answer.toLowerCase() === "true";
+      await saveAnswer(currentIndex, studentAnswer, isCorrect);
+      showToast(
+        `Answer saved! ${isCorrect ? "Correct" : "Incorrect"}`,
+        isCorrect ? "success" : "error"
+      );
+    } catch (error) {
+      showToast("Failed to evaluate answer.", "error");
+      console.error("Error evaluating answer:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleNext = () => {
@@ -53,7 +72,7 @@ function AnswerOneByOne() {
           </p>
           <div className="mt-6 text-center">
             <Link
-              to="/student-dashboard" // Updated to point to student dashboard
+              to="/student-dashboard"
               className="text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200 text-body-md"
               aria-label="Back to Dashboard"
             >
@@ -71,12 +90,9 @@ function AnswerOneByOne() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8">
       <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6 sm:p-8 transition-all duration-300">
-        {/* Heading */}
         <h1 className="text-heading-lg sm:text-heading-lg font-extrabold text-center text-gray-800 mb-6 sm:mb-8 tracking-tight">
           Answer One by One
         </h1>
-
-        {/* Progress Bar */}
         <div className="mb-6">
           <div className="text-body-md text-gray-600 text-center mb-2">
             Question {currentIndex + 1} of {questions.length}
@@ -88,8 +104,6 @@ function AnswerOneByOne() {
             ></div>
           </div>
         </div>
-
-        {/* Question Display */}
         <div className="mb-6">
           <h2 className="text-subheading font-semibold text-gray-800 mb-2">
             {currentQuestion.title}
@@ -104,8 +118,6 @@ function AnswerOneByOne() {
             {currentQuestion.difficulty}
           </div>
         </div>
-
-        {/* Answer Input */}
         <div className="mb-6">
           <label className="block text-body-md font-semibold text-gray-700 mb-2">
             Your Answer
@@ -117,6 +129,7 @@ function AnswerOneByOne() {
             className="w-full px-4 py-3 border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 text-gray-800 placeholder-gray-400 transition-all duration-200 text-body-md"
             placeholder="Enter your answer"
             aria-label="Student Answer"
+            disabled={loading}
           />
           {answers[currentIndex] && (
             <p className="mt-2 text-body-md text-gray-600">
@@ -125,14 +138,12 @@ function AnswerOneByOne() {
             </p>
           )}
         </div>
-
-        {/* Navigation Buttons */}
         <div className="flex justify-between">
           <button
             onClick={handlePrevious}
-            disabled={currentIndex === 0}
+            disabled={currentIndex === 0 || loading}
             className={`px-4 py-3 rounded-lg shadow-md transition-all duration-200 font-semibold text-body-md ${
-              currentIndex === 0
+              currentIndex === 0 || loading
                 ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                 : "bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-300 focus:ring-opacity-50"
             }`}
@@ -142,17 +153,22 @@ function AnswerOneByOne() {
           </button>
           <button
             onClick={handleNext}
-            className="px-4 py-3 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-300 focus:ring-opacity-50 transition-all duration-200 font-semibold text-body-md"
+            disabled={loading}
+            className={`px-4 py-3 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-300 focus:ring-opacity-50 transition-all duration-200 font-semibold text-body-md ${
+              loading ? "opacity-50 cursor-not-allowed" : ""
+            }`}
             aria-label="Next Question"
           >
-            {currentIndex === questions.length - 1 ? "Finish" : "Next"}
+            {loading
+              ? "Evaluating..."
+              : currentIndex === questions.length - 1
+              ? "Finish"
+              : "Next"}
           </button>
         </div>
-
-        {/* Back to Dashboard Link */}
         <div className="mt-6 text-center">
           <Link
-            to="/student-dashboard" // Updated to point to student dashboard
+            to="/student-dashboard"
             className="text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200 text-body-md"
             aria-label="Back to Dashboard"
           >

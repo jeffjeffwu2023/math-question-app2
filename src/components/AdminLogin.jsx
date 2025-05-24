@@ -1,8 +1,8 @@
 // src/components/AdminLogin.jsx
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext.jsx";
-import { showToast } from "../utils/toast.js"; // Import toast utility
+import { useAuth } from "../context/AuthContext";
+import { showToast } from "../utils/toast";
 
 function AdminLogin() {
   const { login } = useAuth();
@@ -12,14 +12,10 @@ function AdminLogin() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    const adminCredentials = { id: "admin123", password: "adminpass" };
-    if (
-      adminId === adminCredentials.id &&
-      password === adminCredentials.password
-    ) {
-      login({ id: adminId, role: "admin", name: "Admin" });
+    const success = await login(adminId, password, "admin");
+    if (success) {
       showToast("Welcome, Admin!", "success");
       navigate("/admin-dashboard");
     } else {
@@ -31,17 +27,12 @@ function AdminLogin() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8 flex items-center justify-center">
       <div className="max-w-md w-full bg-white rounded-xl shadow-md p-6 sm:p-8 transition-all duration-300">
-        {/* Heading */}
         <h1 className="text-heading-lg sm:text-heading-lg font-extrabold text-center text-gray-800 mb-6 tracking-tight">
           Admin Login
         </h1>
-
-        {/* Error Message */}
         {error && (
           <p className="text-red-600 text-body-md text-center mb-4">{error}</p>
         )}
-
-        {/* Login Form */}
         <form onSubmit={handleLogin}>
           <div className="mb-6">
             <label className="block text-body-md font-semibold text-gray-700 mb-2">
@@ -79,8 +70,6 @@ function AdminLogin() {
             </button>
           </div>
         </form>
-
-        {/* Link to Student Login */}
         <div className="mt-6 text-center">
           <p className="text-body-md text-gray-600">
             Are you a student?{" "}

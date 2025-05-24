@@ -1,10 +1,13 @@
 // src/components/AnswerHomework.jsx
 import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useQuestions } from "../context/QuestionContext.jsx";
-import { useStudentAnswers } from "../context/StudentAnswerContext.jsx";
-import { useStudents } from "../context/StudentContext.jsx";
-import QuestionPreview from "./QuestionPreview.jsx";
+import { useQuestions } from "../context/QuestionContext";
+import { useStudentAnswers } from "../context/StudentAnswerContext";
+import { useStudents } from "../context/StudentContext";
+import { useAuth } from "../context/AuthContext";
+import QuestionPreview from "./QuestionPreview";
+import { evaluateAnswer } from "../services/api";
+import { showToast } from "../utils/toast";
 
 function AnswerHomework() {
   const { assignmentId } = useParams();
@@ -12,6 +15,10 @@ function AnswerHomework() {
   const { answers, saveAnswer, assignments, submitAssignment } =
     useStudentAnswers();
   const { students } = useStudents();
+  const { user } = useAuth();
+  const [studentAnswers, setStudentAnswers] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const assignment = assignments.find((a) => a.id === parseInt(assignmentId));
   if (!assignment) {
@@ -26,7 +33,7 @@ function AnswerHomework() {
           </p>
           <div className="mt-6 text-center">
             <Link
-              to="/student-dashboard" // Updated to point to student dashboard
+              to="/student-dashboard"
               className="text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200 text-body-md"
               aria-label="Back to Dashboard"
             >
@@ -45,14 +52,13 @@ function AnswerHomework() {
     assignment.questionIndices.includes(index)
   );
 
-  const [studentAnswers, setStudentAnswers] = useState({});
-
   useEffect(() => {
-    // Load saved answers for the assignment questions
     const initialAnswers = {};
     assignment.questionIndices.forEach((index) => {
-      if (answers[index]) {
-        initialAnswers[index] = answers[index].answer;
+      if (answers.find((a) => a.questionIndex === index)) {
+        initialAnswers[index] = answers.find(
+          (a) => a.questionIndex === index
+        ).answer;
       }
     });
     setStudentAnswers(initialAnswers);
@@ -65,15 +71,32 @@ function AnswerHomework() {
     }));
   };
 
-  const handleSubmit = () => {
-    // Save all answers
-    Object.keys(studentAnswers).forEach((index) => {
-      const answer = studentAnswers[index];
-      const isCorrect = answer.trim().length > 0; // Placeholder logic
-      saveAnswer(parseInt(index), answer, isCorrect);
-    });
-    submitAssignment(assignment.id);
-    alert("Assignment submitted!");
+  const handleSubmit = async () => {
+    if (!user) {
+      setError("Please log in to submit answers.");
+      showToast("Please log in to submit answers.", "error");
+      return;
+    }
+    setLoading(true);
+    try {
+      for (const [questionIndex, answer] of Object.entries(studentAnswers)) {
+        if (!answer.trim()) continue;
+        const question = questions[parseInt(questionIndex)];
+        const prompt = `Evaluate if the student's answer "${answer}" is correct for the math question "${question.title}" with content "${question.content}". Provide a boolean result (true/false).`;
+        const response = await evaluateAnswer(prompt);
+        const isCorrect = response.data.answer.toLowerCase() === "true";
+        await saveAnswer(parseInt(questionIndex), answer, isCorrect);
+      }
+      await submitAssignment(assignment.id);
+      showToast("Assignment submitted successfully!", "success");
+      setStudentAnswers({});
+    } catch (error) {
+      setError("Failed to submit assignment.");
+      showToast("Failed to submit assignment.", "error");
+      console.error("Error submitting assignment:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (assignment.submitted) {
@@ -88,7 +111,7 @@ function AnswerHomework() {
           </p>
           <div className="mt-6 text-center">
             <Link
-              to="/student-dashboard" // Updated to point to student dashboard
+              to="/student-dashboard"
               className="text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200 text-body-md"
               aria-label="Back to Dashboard"
             >
@@ -103,27 +126,23 @@ function AnswerHomework() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8">
       <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6 sm:p-8 transition-all duration-300">
-        {/* Heading */}
         <h1 className="text-heading-lg sm:text-heading-lg font-extrabold text-center text-gray-800 mb-6 sm:mb-8 tracking-tight">
           Homework Assignment for {studentName}
         </h1>
-
-        {/* Back to Dashboard Link */}
         <div className="mb-6">
           <Link
-            to="/student-dashboard" // Updated to point to student dashboard
+            to="/student-dashboard"
             className="text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200 text-body-md"
             aria-label="Back to Dashboard"
           >
             ← Back to Dashboard
           </Link>
         </div>
-
-        {/* Questions List */}
         <div>
           <h2 className="text-subheading font-semibold text-gray-800 mb-4">
             Assignment Questions
           </h2>
+          {error && <p className="text-red-600 mb-4">{error}</p>}
           {assignmentQuestions.length === 0 ? (
             <p className="text-gray-600 text-body-md">No questions assigned.</p>
           ) : (
@@ -156,11 +175,18 @@ function AnswerHomework() {
                       className="w-full px-4 py-3 border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 text-gray-800 placeholder-gray-400 transition-all duration-200 text-body-md"
                       placeholder="Enter your answer"
                       aria-label={`Answer for question ${question.title}`}
+                      disabled={loading}
                     />
-                    {answers[questionIndex] && (
+                    {answers.find((a) => a.questionIndex === questionIndex) && (
                       <p className="mt-2 text-body-md text-gray-600">
-                        Saved Answer: {answers[questionIndex].answer} (
-                        {answers[questionIndex].isCorrect
+                        Saved Answer:{" "}
+                        {
+                          answers.find((a) => a.questionIndex === questionIndex)
+                            .answer
+                        }{" "}
+                        (
+                        {answers.find((a) => a.questionIndex === questionIndex)
+                          .isCorrect
                           ? "Correct"
                           : "Incorrect"}
                         )
@@ -172,15 +198,16 @@ function AnswerHomework() {
             </ul>
           )}
         </div>
-
-        {/* Submit Button */}
         <div className="mt-6 text-center">
           <button
             onClick={handleSubmit}
-            className="px-6 py-3 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700 focus:ring-4 focus:ring-green-300 focus:ring-opacity-50 transition-all duration-200 font-semibold text-subheading"
+            disabled={loading}
+            className={`px-6 py-3 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700 focus:ring-4 focus:ring-green-300 focus:ring-opacity-50 transition-all duration-200 font-semibold text-subheading ${
+              loading ? "opacity-50 cursor-not-allowed" : ""
+            }`}
             aria-label="Submit Assignment"
           >
-            Submit Assignment
+            {loading ? "Submitting..." : "Submit Assignment"}
           </button>
         </div>
       </div>

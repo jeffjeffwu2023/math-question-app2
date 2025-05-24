@@ -2,26 +2,27 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { CategoryProvider } from "./context/CategoryContext.jsx";
-import { QuestionProvider } from "./context/QuestionContext.jsx";
-import { StudentAnswerProvider } from "./context/StudentAnswerContext.jsx";
-import { StudentProvider } from "./context/StudentContext.jsx";
-import { AuthProvider } from "./context/AuthContext.jsx";
-import ProtectedRoute from "./components/ProtectedRoute.jsx";
-import { ToastContainer } from "react-toastify"; // Import ToastContainer
-import "react-toastify/dist/ReactToastify.css"; // Import react-toastify CSS
-import App from "./App.jsx";
-import AddQuestion from "./components/AddQuestion.jsx";
-import CategoryManagement from "./components/CategoryManagement.jsx";
-import ListQuestions from "./components/ListQuestions.jsx";
-import AnswerOneByOne from "./components/AnswerOneByOne.jsx";
-import AnswerHomework from "./components/AnswerHomework.jsx";
-import AssignHomework from "./components/AssignHomework.jsx";
-import StudentManagement from "./components/StudentManagement.jsx";
-import StudentDashboard from "./components/StudentDashboard.jsx";
-import StudentLogin from "./components/StudentLogin.jsx";
-import AdminLogin from "./components/AdminLogin.jsx";
-import AdminDashboard from "./components/AdminDashboard.jsx";
+import { CategoryProvider } from "./context/CategoryContext";
+import { QuestionProvider } from "./context/QuestionContext";
+import { StudentAnswerProvider } from "./context/StudentAnswerContext";
+import { StudentProvider } from "./context/StudentContext";
+import { AuthProvider } from "./context/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import App from "./App";
+import AddQuestion from "./components/AddQuestion";
+import CategoryManagement from "./components/CategoryManagement";
+import ListQuestions from "./components/ListQuestions";
+import AnswerOneByOne from "./components/AnswerOneByOne";
+import AnswerHomework from "./components/AnswerHomework";
+import AssignHomework from "./components/AssignHomework";
+import StudentManagement from "./components/StudentManagement";
+import StudentDashboard from "./components/StudentDashboard";
+import StudentLogin from "./components/StudentLogin";
+import AdminLogin from "./components/AdminLogin";
+import AdminDashboard from "./components/AdminDashboard";
+import PerformanceAnalysis from "./components/PerformanceAnalysis";
 import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
@@ -57,6 +58,14 @@ ReactDOM.createRoot(document.getElementById("root")).render(
                   element={
                     <ProtectedRoute allowedRole="student">
                       <AnswerHomework />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/performance-analysis"
+                  element={
+                    <ProtectedRoute allowedRole="student">
+                      <PerformanceAnalysis />
                     </ProtectedRoute>
                   }
                 />
