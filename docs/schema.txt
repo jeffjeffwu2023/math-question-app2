@@ -1,0 +1,26 @@
+// questions collection
+{
+    _id: ObjectId,
+    title: String,
+    content: String,
+    category: String, // e.g., "Algebra" (string, not ObjectId)
+    difficulty: String,
+    knowledgePoints: [ObjectId], // References to knowledge_points
+    createdAt: Date,
+    updatedAt: Date,
+    isActive: Boolean
+  }
+  
+  // knowledge_points collection
+  {
+    _id: ObjectId,
+    version: String, // e.g., "2025.01"
+    grade: String, // e.g., "Grade 8"
+    strand: String, // e.g., "Number"
+    topic: String, // e.g., "Operations with Rational Numbers"
+    skill: String, // e.g., "Add and subtract rational numbers"
+    subKnowledgePoint: String, // e.g., "Add fractions with unlike denominators"
+    createdAt: Date,
+    updatedAt: Date,
+    isActive: Boolean
+  }

@@ -1,27 +1,28 @@
 // src/components/AddQuestion.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useCategories } from "../context/CategoryContext.jsx";
 import { useQuestions } from "../context/QuestionContext.jsx";
-import { showToast } from "../utils/toast.js"; // Import toast utility
+import { showToast } from "../utils/toast.js";
 import QuestionEditor from "./QuestionEditor.jsx";
 import QuestionPreview from "./QuestionPreview.jsx";
 
 function AddQuestion() {
   const { categories } = useCategories();
   const { addQuestion } = useQuestions();
-
   const [questionTitle, setQuestionTitle] = useState("");
   const [questionContent, setQuestionContent] = useState("");
   const [difficulty, setDifficulty] = useState("easy");
   const [questionCategory, setQuestionCategory] = useState(
     categories[0] || "Algebra"
   );
+ 
+ 
 
   const handleSave = () => {
-    if (!questionTitle.trim() || !questionContent.trim()) {
+    if (!questionTitle.trim() || !questionContent.trim() ) {
       showToast(
-        "Please enter a question title and content before saving.",
+        "Please enter a question title, content, and knowledge point.",
         "error"
       );
       return;
@@ -33,34 +34,36 @@ function AddQuestion() {
       category: questionCategory,
     };
     addQuestion(newQuestion);
-    console.log("Saving question:", newQuestion);
     showToast("Question saved successfully!", "success");
     setQuestionTitle("");
     setQuestionContent("");
     setDifficulty("easy");
     setQuestionCategory(categories[0] || "Algebra");
+
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8">
       <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6 sm:p-8 transition-all duration-300">
-        {/* Heading */}
-        <h1 className="text-heading-lg sm:text-heading-lg font-extrabold text-center text-gray-800 mb-6 sm:mb-8 tracking-tight">
+        <h1 className="text-heading-lg font-extrabold text-center text-gray-800 mb-6 sm:mb-8 tracking-tight">
           Add Math Question
         </h1>
-
-        {/* Back to Dashboard Link */}
         <div className="mb-6">
           <Link
             to="/admin-dashboard"
-            className="text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200 text-body-md"
+            className="text-indigo-600 hover:text-indigo-800 font-medium text-body-md"
             aria-label="Back to Dashboard"
           >
             ← Back to Dashboard
           </Link>
+          <Link
+            to="/category-management"
+            className="ml-4 text-indigo-600 hover:text-indigo-800 font-medium text-body-md"
+            aria-label="Manage Categories"
+          >
+            Manage Categories
+          </Link>
         </div>
-
-        {/* Question Title */}
         <div className="mb-6">
           <label className="block text-body-md font-semibold text-gray-700 mb-2">
             Question Title
@@ -74,8 +77,6 @@ function AddQuestion() {
             aria-label="Question Title"
           />
         </div>
-
-        {/* Question Category */}
         <div className="mb-6">
           <label className="block text-body-md font-semibold text-gray-700 mb-2">
             Category
@@ -93,8 +94,6 @@ function AddQuestion() {
             ))}
           </select>
         </div>
-
-        {/* Difficulty */}
         <div className="mb-6">
           <label className="block text-body-md font-semibold text-gray-700 mb-2">
             Difficulty
@@ -110,16 +109,12 @@ function AddQuestion() {
             <option value="hard">Hard</option>
           </select>
         </div>
-
-        {/* Question Content */}
         <div className="mb-6">
           <label className="block text-body-md font-semibold text-gray-700 mb-2">
             Question Content
           </label>
           <QuestionEditor onContentChange={setQuestionContent} />
         </div>
-
-        {/* Preview */}
         <div className="mb-6">
           <label className="block text-body-md font-semibold text-gray-700 mb-2">
             Preview
@@ -128,8 +123,6 @@ function AddQuestion() {
             <QuestionPreview content={questionContent} />
           </div>
         </div>
-
-        {/* Save Button */}
         <button
           onClick={handleSave}
           className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3 px-4 rounded-lg shadow-md hover:from-indigo-700 hover:to-indigo-800 focus:ring-4 focus:ring-indigo-300 focus:ring-opacity-50 transition-all duration-200 font-semibold text-subheading"

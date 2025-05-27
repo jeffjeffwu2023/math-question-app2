@@ -1,49 +1,83 @@
 // src/context/CategoryContext.jsx
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
+import {
+  getCategories,
+  addCategory,
+  updateCategory,
+  deleteCategory,
+} from "../services/api.js";
+import { showToast } from "../utils/toast.js";
 
 const CategoryContext = createContext();
 
 export function CategoryProvider({ children }) {
-  const [categories, setCategories] = useState([
-    "Algebra",
-    "Geometry",
-    "Calculus",
-    "Trigonometry",
-    "Statistics",
-  ]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const addCategory = (newCategory) => {
-    if (categories.includes(newCategory)) {
-      alert("Category already exists!");
+  useEffect(() => {
+    const fetchCategories = async () => {
+      setLoading(true);
+      try {
+        const response = await getCategories();
+        setCategories(response.data.map((c) => c.name));
+      } catch (error) {
+        showToast("Failed to fetch categories.", "error");
+        console.error("Error fetching categories:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  const addNewCategory = async (category) => {
+    try {
+      await addCategory({ name: category });
+      setCategories([...categories, category]);
+      showToast("Category added successfully!", "success");
+      return true;
+    } catch (error) {
+      showToast("Failed to add category.", "error");
+      console.error("Error adding category:", error);
       return false;
     }
-    setCategories([...categories, newCategory]);
-    return true;
   };
 
-  const editCategory = (oldCategory, newCategory) => {
-    if (categories.includes(newCategory) && oldCategory !== newCategory) {
-      alert("Category already exists!");
+  const updateExistingCategory = async (oldName, newName) => {
+    try {
+      await updateCategory(oldName, { name: newName });
+      setCategories(categories.map((c) => (c === oldName ? newName : c)));
+      showToast("Category updated successfully!", "success");
+      return true;
+    } catch (error) {
+      showToast("Failed to update category.", "error");
+      console.error("Error updating category:", error);
       return false;
     }
-    setCategories(
-      categories.map((cat) => (cat === oldCategory ? newCategory : cat))
-    );
-    return true;
   };
 
-  const deleteCategory = (category) => {
-    if (categories.length === 1) {
-      alert("You must have at least one category!");
+  const deleteExistingCategory = async (name) => {
+    try {
+      await deleteCategory(name);
+      setCategories(categories.filter((c) => c !== name));
+      showToast("Category deleted successfully!", "success");
+      return true;
+    } catch (error) {
+      showToast("Failed to delete category.", "error");
+      console.error("Error deleting category:", error);
       return false;
     }
-    setCategories(categories.filter((cat) => cat !== category));
-    return true;
   };
 
   return (
     <CategoryContext.Provider
-      value={{ categories, addCategory, editCategory, deleteCategory }}
+      value={{
+        categories,
+        loading,
+        addCategory: addNewCategory,
+        editCategory: updateExistingCategory,
+        deleteCategory: deleteExistingCategory,
+      }}
     >
       {children}
     </CategoryContext.Provider>

@@ -1,123 +1,72 @@
 // src/components/AnswerHomework.jsx
 import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useQuestions } from "../context/QuestionContext";
-import { useStudentAnswers } from "../context/StudentAnswerContext";
-import { useStudents } from "../context/StudentContext";
 import { useAuth } from "../context/AuthContext";
-import QuestionPreview from "./QuestionPreview";
-import { evaluateAnswer } from "../services/api";
+import { useQuestions } from "../context/QuestionContext";
+import { getAssignments, submitAssignment } from "../services/api";
 import { showToast } from "../utils/toast";
+import { ClipLoader } from "react-spinners";
 
 function AnswerHomework() {
-  const { assignmentId } = useParams();
-  const { questions } = useQuestions();
-  const { answers, saveAnswer, assignments, submitAssignment } =
-    useStudentAnswers();
-  const { students } = useStudents();
   const { user } = useAuth();
-  const [studentAnswers, setStudentAnswers] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const assignment = assignments.find((a) => a.id === parseInt(assignmentId));
-  if (!assignment) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8">
-        <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6 sm:p-8 transition-all duration-300">
-          <h1 className="text-heading-lg sm:text-heading-lg font-extrabold text-center text-gray-800 mb-6 sm:mb-8 tracking-tight">
-            Homework Assignment
-          </h1>
-          <p className="text-gray-600 text-body-md text-center">
-            Assignment not found.
-          </p>
-          <div className="mt-6 text-center">
-            <Link
-              to="/student-dashboard"
-              className="text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200 text-body-md"
-              aria-label="Back to Dashboard"
-            >
-              ← Back to Dashboard
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const student = students.find((s) => s.id === assignment.studentId);
-  const studentName = student ? student.name : "Unknown Student";
-
-  const assignmentQuestions = questions.filter((_, index) =>
-    assignment.questionIndices.includes(index)
-  );
+  const { questions } = useQuestions();
+  const { assignmentId } = useParams();
+  const [assignment, setAssignment] = useState(null);
+  const [answers, setAnswers] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    const initialAnswers = {};
-    assignment.questionIndices.forEach((index) => {
-      if (answers.find((a) => a.questionIndex === index)) {
-        initialAnswers[index] = answers.find(
-          (a) => a.questionIndex === index
-        ).answer;
+    const fetchAssignment = async () => {
+      setLoading(true);
+      try {
+        const response = await getAssignments(user.id);
+        const assignmentData = response.data.find((a) => a.id === assignmentId);
+        if (!assignmentData || assignmentData.studentId !== user.id) {
+          throw new Error("Assignment not found or unauthorized");
+        }
+        setAssignment(assignmentData);
+      } catch (err) {
+        console.error("Error fetching assignment:", err);
+        setError("Failed to load assignment.");
+        showToast("Failed to load assignment.", "error");
+      } finally {
+        setLoading(false);
       }
-    });
-    setStudentAnswers(initialAnswers);
-  }, [answers, assignment.questionIndices]);
+    };
+    fetchAssignment();
+  }, [assignmentId, user.id]);
 
-  const handleAnswerChange = (index, value) => {
-    setStudentAnswers((prev) => ({
+  const handleAnswerChange = (questionIndex, value) => {
+    setAnswers((prev) => ({
       ...prev,
-      [index]: value,
+      [questionIndex]: value,
     }));
   };
 
   const handleSubmit = async () => {
-    if (!user) {
-      setError("Please log in to submit answers.");
-      showToast("Please log in to submit answers.", "error");
-      return;
-    }
-    setLoading(true);
+    if (!assignment || assignment.submitted) return;
+    setSubmitting(true);
     try {
-      for (const [questionIndex, answer] of Object.entries(studentAnswers)) {
-        if (!answer.trim()) continue;
-        const question = questions[parseInt(questionIndex)];
-        const prompt = `Evaluate if the student's answer "${answer}" is correct for the math question "${question.title}" with content "${question.content}". Provide a boolean result (true/false).`;
-        const response = await evaluateAnswer(prompt);
-        const isCorrect = response.data.answer.toLowerCase() === "true";
-        await saveAnswer(parseInt(questionIndex), answer, isCorrect);
-      }
-      await submitAssignment(assignment.id);
+      await submitAssignment(assignmentId);
+      setAssignment((prev) => ({ ...prev, submitted: true }));
       showToast("Assignment submitted successfully!", "success");
-      setStudentAnswers({});
-    } catch (error) {
-      setError("Failed to submit assignment.");
+    } catch (err) {
+      console.error("Error submitting assignment:", err);
       showToast("Failed to submit assignment.", "error");
-      console.error("Error submitting assignment:", error);
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  if (assignment.submitted) {
+  if (!user || user.role !== "student") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8">
         <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6 sm:p-8 transition-all duration-300">
-          <h1 className="text-heading-lg sm:text-heading-lg font-extrabold text-center text-gray-800 mb-6 sm:mb-8 tracking-tight">
-            Homework Assignment
-          </h1>
-          <p className="text-gray-600 text-body-md text-center">
-            This assignment has already been submitted.
+          <p className="text-red-600 text-body-md text-center">
+            Please log in as a student to view this page.
           </p>
-          <div className="mt-6 text-center">
-            <Link
-              to="/student-dashboard"
-              className="text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200 text-body-md"
-              aria-label="Back to Dashboard"
-            >
-              ← Back to Dashboard
-            </Link>
-          </div>
         </div>
       </div>
     );
@@ -127,89 +76,91 @@ function AnswerHomework() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8">
       <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6 sm:p-8 transition-all duration-300">
         <h1 className="text-heading-lg sm:text-heading-lg font-extrabold text-center text-gray-800 mb-6 sm:mb-8 tracking-tight">
-          Homework Assignment for {studentName}
+          Answer Homework
         </h1>
-        <div className="mb-6">
+        <div className="mb-6 text-center">
           <Link
             to="/student-dashboard"
             className="text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200 text-body-md"
             aria-label="Back to Dashboard"
           >
-            ← Back to Dashboard
+            Back to Dashboard
           </Link>
         </div>
-        <div>
-          <h2 className="text-subheading font-semibold text-gray-800 mb-4">
-            Assignment Questions
-          </h2>
-          {error && <p className="text-red-600 mb-4">{error}</p>}
-          {assignmentQuestions.length === 0 ? (
-            <p className="text-gray-600 text-body-md">No questions assigned.</p>
-          ) : (
-            <ul className="space-y-6">
-              {assignmentQuestions.map((question, idx) => {
-                const questionIndex = assignment.questionIndices[idx];
-                return (
-                  <li
-                    key={questionIndex}
-                    className="p-4 bg-gray-50 rounded-lg shadow-sm border border-gray-200"
-                  >
-                    <h3 className="text-subheading font-semibold text-gray-800 mb-2">
-                      {question.title}
-                    </h3>
-                    <div className="text-body-md text-gray-800 mb-4">
-                      <QuestionPreview content={question.content} />
-                    </div>
-                    <div className="text-body-sm text-gray-600 mb-2">
-                      <span className="font-medium">Category:</span>{" "}
-                      {question.category} |{" "}
-                      <span className="font-medium">Difficulty:</span>{" "}
-                      {question.difficulty}
-                    </div>
-                    <input
-                      type="text"
-                      value={studentAnswers[questionIndex] || ""}
-                      onChange={(e) =>
-                        handleAnswerChange(questionIndex, e.target.value)
-                      }
-                      className="w-full px-4 py-3 border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 text-gray-800 placeholder-gray-400 transition-all duration-200 text-body-md"
-                      placeholder="Enter your answer"
-                      aria-label={`Answer for question ${question.title}`}
-                      disabled={loading}
-                    />
-                    {answers.find((a) => a.questionIndex === questionIndex) && (
-                      <p className="mt-2 text-body-md text-gray-600">
-                        Saved Answer:{" "}
-                        {
-                          answers.find((a) => a.questionIndex === questionIndex)
-                            .answer
-                        }{" "}
-                        (
-                        {answers.find((a) => a.questionIndex === questionIndex)
-                          .isCorrect
-                          ? "Correct"
-                          : "Incorrect"}
-                        )
+        {loading ? (
+          <div className="flex justify-center">
+            <ClipLoader color="#2563eb" size={50} />
+          </div>
+        ) : error ? (
+          <p className="text-red-600 text-body-md text-center">{error}</p>
+        ) : assignment ? (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-subheading font-semibold text-gray-800 mb-2">
+                Assignment #{assignment.id}
+              </h2>
+              <p className="text-body-md text-gray-600">
+                <span className="font-medium">Status:</span>{" "}
+                {assignment.submitted ? "Submitted" : "Not Submitted"}
+              </p>
+            </div>
+            {assignment.submitted ? (
+              <p className="text-gray-600 text-body-md text-center">
+                This assignment has already been submitted.
+              </p>
+            ) : (
+              <>
+                <h3 className="text-subheading font-semibold text-gray-800 mb-4">
+                  Questions
+                </h3>
+                {assignment.questionIndices.map((index) => {
+                  const question = questions.find((q) => q.index === index);
+                  return question ? (
+                    <div
+                      key={index}
+                      className="p-4 bg-gray-50 rounded-lg shadow-sm border border-gray-200 space-y-2"
+                    >
+                      <p className="text-body-md font-medium text-gray-800">
+                        {question.title} (Category: {question.category},
+                        Difficulty: {question.difficulty})
                       </p>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-        <div className="mt-6 text-center">
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
-            className={`px-6 py-3 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700 focus:ring-4 focus:ring-green-300 focus:ring-opacity-50 transition-all duration-200 font-semibold text-subheading ${
-              loading ? "opacity-50 cursor-not-allowed" : ""
-            }`}
-            aria-label="Submit Assignment"
-          >
-            {loading ? "Submitting..." : "Submit Assignment"}
-          </button>
-        </div>
+                      <p className="text-body-md text-gray-600">
+                        {question.content}
+                      </p>
+                      <input
+                        type="text"
+                        value={answers[index] || ""}
+                        onChange={(e) =>
+                          handleAnswerChange(index, e.target.value)
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+                        placeholder="Enter your answer"
+                        disabled={submitting}
+                      />
+                    </div>
+                  ) : (
+                    <p key={index} className="text-gray-600 text-body-md">
+                      Question {index} not found.
+                    </p>
+                  );
+                })}
+                <div className="mt-6 text-center">
+                  <button
+                    onClick={handleSubmit}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-300 focus:ring-opacity-50 transition-all duration-200 text-body-md disabled:bg-indigo-400"
+                    disabled={submitting || assignment.submitted}
+                  >
+                    {submitting ? "Submitting..." : "Submit Assignment"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        ) : (
+          <p className="text-gray-600 text-body-md text-center">
+            Assignment not found.
+          </p>
+        )}
       </div>
     </div>
   );

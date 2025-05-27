@@ -2,84 +2,90 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { showToast } from "../utils/toast";
 
 function StudentLogin() {
+  const [id, setId] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const [studentId, setStudentId] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-
-  const handleLogin = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const success = await login(studentId, password, "student");
+    setLoading(true);
+    const success = await login(id, password, "student");
+    setLoading(false);
     if (success) {
-      showToast(`Welcome, ${studentId}!`, "success");
       navigate("/student-dashboard");
-    } else {
-      setError("Invalid student ID or password. Please try again.");
-      showToast("Invalid student ID or password. Please try again.", "error");
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8 flex items-center justify-center">
       <div className="max-w-md w-full bg-white rounded-xl shadow-md p-6 sm:p-8 transition-all duration-300">
-        <h1 className="text-heading-lg sm:text-heading-lg font-extrabold text-center text-gray-800 mb-6 tracking-tight">
+        <h1 className="text-heading-lg sm:text-heading-lg font-extrabold text-center text-gray-800 mb-6 sm:mb-8 tracking-tight">
           Student Login
         </h1>
-        {error && (
-          <p className="text-red-600 text-body-md text-center mb-4">{error}</p>
-        )}
-        <form onSubmit={handleLogin}>
-          <div className="mb-6">
-            <label className="block text-body-md font-semibold text-gray-700 mb-2">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+          <div>
+            <label
+              htmlFor="id"
+              className="block text-body-md font-medium text-gray-700 mb-1"
+            >
               Student ID
             </label>
             <input
               type="text"
-              value={studentId}
-              onChange={(e) => setStudentId(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 text-gray-800 placeholder-gray-400 transition-all duration-200 text-body-md"
+              id="id"
+              value={id}
+              onChange={(e) => setId(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
               placeholder="Enter your student ID"
-              aria-label="Student ID"
+              required
+              disabled={loading}
             />
           </div>
-          <div className="mb-6">
-            <label className="block text-body-md font-semibold text-gray-700 mb-2">
+          <div>
+            <label
+              htmlFor="password"
+              className="block text-body-md font-medium text-gray-700 mb-1"
+            >
               Password
             </label>
             <input
               type="password"
+              id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 text-gray-800 placeholder-gray-400 transition-all duration-200 text-body-md"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
               placeholder="Enter your password"
-              aria-label="Password"
+              required
+              disabled={loading}
             />
           </div>
-          <div className="text-center">
-            <button
-              type="submit"
-              className="px-6 py-3 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-300 focus:ring-opacity-50 transition-all duration-200 font-semibold text-subheading"
-              aria-label="Login"
-            >
-              Login
-            </button>
-          </div>
+          <button
+            type="submit"
+            className="w-full py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200 disabled:bg-indigo-400"
+            disabled={loading}
+          >
+            {loading ? "Logging in..." : "Login"}
+          </button>
         </form>
         <div className="mt-6 text-center">
-          <p className="text-body-md text-gray-600">
-            Are you an admin?{" "}
-            <Link
-              to="/admin-login"
-              className="text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200"
-            >
-              Login here
-            </Link>
-          </p>
+          <Link
+            to="/admin-login"
+            className="text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200 text-body-md"
+          >
+            Admin Login
+          </Link>
+        </div>
+        <div className="mt-2 text-center">
+          <Link
+            to="/parent-login"
+            className="text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200 text-body-md"
+          >
+            Parent Login
+          </Link>
         </div>
       </div>
     </div>

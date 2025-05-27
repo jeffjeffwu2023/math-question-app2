@@ -1,45 +1,56 @@
 // src/context/AuthContext.jsx
-import { createContext, useContext, useState } from "react";
-import { API } from "../services/api"; // Import the API instance
+import { createContext, useContext, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { API, login } from "../services/api.js";
+import { showToast } from "../utils/toast.js";
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null); // { id: string, role: "student" | "admin", name: string, token: string }
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
-  const login = async (id, password, role) => {
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      // Optionally verify token with backend
+      setUser(JSON.parse(localStorage.getItem("user") || "{}"));
+    }
+    setLoading(false);
+  }, []);
+
+  const loginUser = async (id, password, role) => {
     try {
-      console.log("Attempting login with:", { id, password, role });
-      const response = await API.post("/api/auth/login/", {
-        id,
-        password,
-      });
-      console.log("Login response:", response.data);
+      const response = await API.post("/api/auth/login/", { id, password });
       const { access_token, user } = response.data;
       if (user.role !== role) {
-        console.error(`Role mismatch: expected ${role}, got ${user.role}`);
-        throw new Error(`Invalid role. Expected ${role}, got ${user.role}`);
+        throw new Error("Invalid role");
       }
-      setUser({ ...user, token: access_token });
-      API.defaults.headers.common["Authorization"] = `Bearer ${access_token}`; // Set token on API instance
-      console.log("Login successful, user set:", {
-        ...user,
-        token: access_token,
-      });
+      localStorage.setItem("token", access_token);
+      localStorage.setItem("user", JSON.stringify(user));
+      setUser(user);
+      API.defaults.headers.common["Authorization"] = `Bearer ${access_token}`;
+      showToast("Login successful!", "success");
       return true;
     } catch (error) {
-      console.error("Login error:", error.response?.data || error.message);
+      showToast("Login failed. Check credentials.", "error");
+      console.error("Login error:", error);
       return false;
     }
   };
 
   const logout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
     setUser(null);
-    delete API.defaults.headers.common["Authorization"]; // Remove token on logout
+    delete API.defaults.headers.common["Authorization"];
+    showToast("Logged out successfully.", "success");
+    navigate("/");
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login: loginUser, logout }}>
       {children}
     </AuthContext.Provider>
   );

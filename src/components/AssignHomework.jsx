@@ -1,23 +1,39 @@
-// src/components/AssignHomework.jsx
+// frontend/src/components/AssignHomework.jsx
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuestions } from "../context/QuestionContext.jsx";
-import { useStudentAnswers } from "../context/StudentAnswerContext.jsx";
-import { useStudents } from "../context/StudentContext.jsx";
-import { showToast } from "../utils/toast.js";
-import QuestionPreview from "./QuestionPreview.jsx";
+import { useQuestions } from "../context/QuestionContext";
+import { useStudentAnswers } from "../context/StudentAnswerContext";
+import { useUsers } from "../context/UserContext";
+import { useClassrooms } from "../context/ClassroomContext";
+import { useAuth } from "../context/AuthContext";
+import { showToast } from "../utils/toast";
+import QuestionPreview from "./QuestionPreview";
 
 function AssignHomework() {
   const { questions } = useQuestions();
-  const { assignHomework } = useStudentAnswers();
-  const { students } = useStudents();
+  const { createAssignment } = useStudentAnswers();
+  const { users } = useUsers();
+  const { classrooms } = useClassrooms();
+  const { user } = useAuth();
 
   const [selectedQuestions, setSelectedQuestions] = useState([]);
   const [selectedStudentId, setSelectedStudentId] = useState("");
+  const [selectedClassroomId, setSelectedClassroomId] = useState("");
 
-  // Debug logs to check context data
-  console.log("AssignHomework - Questions:", questions);
-  console.log("AssignHomework - Students:", students);
+  const students = users.filter((u) => u.role === "student");
+  const filteredStudents =
+    user.role === "tutor"
+      ? students.filter(
+          (s) =>
+            user.studentIds?.includes(s.id) &&
+            (!selectedClassroomId ||
+              s.classroomIds?.includes(selectedClassroomId))
+        )
+      : students.filter(
+          (s) =>
+            !selectedClassroomId ||
+            s.classroomIds?.includes(selectedClassroomId)
+        );
 
   const handleQuestionToggle = (index) => {
     setSelectedQuestions((prev) =>
@@ -25,43 +41,62 @@ function AssignHomework() {
     );
   };
 
-  const handleAssign = () => {
-    if (!selectedStudentId) {
-      showToast("Please select a student.", "error");
+  const handleAssign = async () => {
+    if (!selectedStudentId || selectedQuestions.length === 0) {
+      showToast("Please select a student and at least one question.", "error");
       return;
     }
-    if (selectedQuestions.length === 0) {
-      showToast("Please select at least one question.", "error");
-      return;
+    try {
+      await createAssignment({
+        questionIndices: selectedQuestions,
+        studentId: selectedStudentId,
+      });
+      showToast("Homework assigned successfully!", "success");
+      setSelectedQuestions([]);
+      setSelectedStudentId("");
+      setSelectedClassroomId("");
+    } catch (error) {
+      showToast("Failed to assign homework.", "error");
+      console.error("Error assigning homework:", error);
     }
-    assignHomework(selectedQuestions, selectedStudentId);
-    const student = students.find((s) => s.id === selectedStudentId);
-    const studentName = student ? student.name : selectedStudentId;
-    showToast(`Homework assigned to ${studentName}!`, "success");
-    setSelectedQuestions([]);
-    setSelectedStudentId("");
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8">
       <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6 sm:p-8 transition-all duration-300">
-        {/* Heading */}
-        <h1 className="text-heading-lg sm:text-heading-lg font-extrabold text-center text-gray-800 mb-6 sm:mb-8 tracking-tight">
+        <h1 className="text-heading-lg font-extrabold text-center text-gray-800 mb-6 tracking-tight">
           Assign Homework
         </h1>
-
-        {/* Back to Dashboard Link */}
         <div className="mb-6">
           <Link
-            to="/admin-dashboard"
+            to={user.role === "tutor" ? "/tutor-dashboard" : "/admin-dashboard"}
             className="text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200 text-body-md"
             aria-label="Back to Dashboard"
           >
             ← Back to Dashboard
           </Link>
         </div>
-
-        {/* Student Selection */}
+        <div className="mb-6">
+          <label className="block text-body-md font-semibold text-gray-700 mb-2">
+            Select Classroom
+          </label>
+          <select
+            value={selectedClassroomId}
+            onChange={(e) => {
+              setSelectedClassroomId(e.target.value);
+              setSelectedStudentId("");
+            }}
+            className="w-full px-4 py-3 border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 text-gray-800 bg-white transition-all duration-200 text-body-md"
+            aria-label="Select Classroom"
+          >
+            <option value="">All Classrooms</option>
+            {classrooms.map((classroom) => (
+              <option key={classroom.id} value={classroom.id}>
+                {classroom.name}
+              </option>
+            ))}
+          </select>
+        </div>
         <div className="mb-6">
           <label className="block text-body-md font-semibold text-gray-700 mb-2">
             Select Student
@@ -73,15 +108,13 @@ function AssignHomework() {
             aria-label="Select Student"
           >
             <option value="">Select a student</option>
-            {students.map((student) => (
+            {filteredStudents.map((student) => (
               <option key={student.id} value={student.id}>
                 {student.name} ({student.id})
               </option>
             ))}
           </select>
         </div>
-
-        {/* Questions List */}
         <div>
           <h2 className="text-subheading font-semibold text-gray-800 mb-4">
             Select Questions
@@ -123,8 +156,6 @@ function AssignHomework() {
             </ul>
           )}
         </div>
-
-        {/* Assign Button */}
         <div className="mt-6 text-center">
           <button
             onClick={handleAssign}

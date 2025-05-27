@@ -1,56 +1,66 @@
-// src/App.jsx
+// math-question-app2/src/App.jsx
 import { Link } from "react-router-dom";
-import { useAuth } from "./context/AuthContext.jsx";
+import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { useAuth } from "./context/AuthContext";
 
 function App() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
-  const handleLogout = () => {
-    logout();
-  };
+  const navigate = useNavigate();
+  console.log("User is logged in:", user);
 
-  if (user) {
-    // Redirect logged-in users to their respective dashboards
-    return user.role === "student" ? (
-      <Navigate to="/student-dashboard" />
-    ) : (
-      <Navigate to="/admin-dashboard" />
-    );
-  }
+  useEffect(() => {
+    if (user && user.role){
+      switch (user.role) {
+        case "admin":
+          navigate("/admin-dashboard");
+          break;
+        case "student":
+          navigate("/student-dashboard");
+          break;
+        case "tutor":
+          navigate("/tutor-dashboard");
+          break;
+        case "parent":
+          navigate("/parent-dashboard");
+          break;
+        default:
+          navigate("/");
+      }
+    }
+  }, [user, navigate]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8">
-      <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6 sm:p-8 transition-all duration-300">
-        {/* Heading */}
-        <h1 className="text-heading-lg sm:text-heading-lg font-extrabold text-center text-gray-800 mb-6 sm:mb-8 tracking-tight">
-          Welcome to Math Question App
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8 flex items-center justify-center">
+      <div className="max-w-md w-full bg-white rounded-xl shadow-md p-6 sm:p-8 transition-all duration-300">
+        <h1 className="text-heading-lg font-extrabold text-center text-gray-800 mb-6 tracking-tight">
+          Math Question App
         </h1>
-
-        {/* Navigation Links */}
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-4">
           <Link
             to="/student-login"
-            className="block p-4 bg-teal-50 rounded-lg shadow-sm hover:bg-teal-100 transition-colors duration-200 text-center"
-            aria-label="Student Login"
+            className="block w-full py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-center font-semibold text-body-md"
           >
-            <h2 className="text-subheading font-semibold text-teal-700">
-              Student Login
-            </h2>
-            <p className="text-body-md text-gray-600 mt-1">
-              Login to answer questions
-            </p>
+            Student Login
+          </Link>
+          <Link
+            to="/tutor-login"
+            className="block w-full py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 text-center font-semibold text-body-md"
+          >
+            Tutor Login
+          </Link>
+          <Link
+            to="/parent-login"
+            className="block w-full py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-center font-semibold text-body-md"
+          >
+            Parent Login
           </Link>
           <Link
             to="/admin-login"
-            className="block p-4 bg-orange-50 rounded-lg shadow-sm hover:bg-orange-100 transition-colors duration-200 text-center"
-            aria-label="Admin Login"
+            className="block w-full py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-center font-semibold text-body-md"
           >
-            <h2 className="text-subheading font-semibold text-orange-700">
-              Admin Login
-            </h2>
-            <p className="text-body-md text-gray-600 mt-1">
-              Login to manage the app
-            </p>
+            Admin Login
           </Link>
         </div>
       </div>

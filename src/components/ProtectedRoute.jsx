@@ -6,19 +6,41 @@ function ProtectedRoute({ children, allowedRole }) {
   const { user } = useAuth();
 
   if (!user) {
-    // Redirect to the appropriate login page based on the role
     return (
       <Navigate
-        to={allowedRole === "student" ? "/student-login" : "/admin-login"}
+        to={allowedRole.includes("student") ? "/student-login" : "/admin-login"}
       />
     );
   }
 
-  if (user.role !== allowedRole) {
-    // Redirect to the appropriate dashboard if the role doesn't match
+  if (Array.isArray(allowedRole)) {
+    if (!allowedRole.includes(user.role)) {
+      return (
+        <Navigate
+          to={
+            user.role === "student"
+              ? "/student-dashboard"
+              : user.role === "tutor"
+              ? "/tutor-dashboard"
+              : user.role === "parent"
+              ? "/parent-dashboard"
+              : "/admin-dashboard"
+          }
+        />
+      );
+    }
+  } else if (user.role !== allowedRole) {
     return (
       <Navigate
-        to={user.role === "student" ? "/student-dashboard" : "/admin-dashboard"}
+        to={
+          user.role === "student"
+            ? "/student-dashboard"
+            : user.role === "tutor"
+            ? "/tutor-dashboard"
+            : user.role === "parent"
+            ? "/parent-dashboard"
+            : "/admin-dashboard"
+        }
       />
     );
   }

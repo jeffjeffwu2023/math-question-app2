@@ -1,4 +1,4 @@
-// src/context/QuestionContext.jsx
+// math-question-app2/src/context/QuestionContext.jsx
 import { createContext, useContext, useState, useEffect } from "react";
 import { getQuestions, addQuestion } from "../services/api";
 import { showToast } from "../utils/toast";
@@ -8,17 +8,20 @@ const QuestionContext = createContext();
 export function QuestionProvider({ children }) {
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchQuestions = async () => {
       setLoading(true);
       try {
         const response = await getQuestions();
-        setQuestions(response.data);
-        console.log("Fetched questions:", response.data);
+        setQuestions(response.data || []);
+        setError(null);
       } catch (error) {
-        showToast("Failed to fetch questions.", "error");
-        console.error("Error fetching questions:", error);
+        const errorMessage =
+          error.response?.data?.detail || "Failed to fetch questions.";
+        setError(errorMessage);
+        showToast(errorMessage, "error");
       } finally {
         setLoading(false);
       }
@@ -26,21 +29,24 @@ export function QuestionProvider({ children }) {
     fetchQuestions();
   }, []);
 
-  const addQuestion = async (newQuestion) => {
+  const addQuestion = async (question) => {
     try {
-      const response = await addQuestion(newQuestion);
-      setQuestions((prev) => [...prev, newQuestion]);
-      console.log("Added question:", newQuestion);
+      const response = await addQuestion(question);
+      setQuestions((prev) => [...prev, response.data]);
+      showToast("Question added successfully!", "success");
       return true;
     } catch (error) {
-      showToast("Failed to add question.", "error");
-      console.error("Error adding question:", error);
+      const errorMessage =
+        error.response?.data?.detail || "Failed to add question.";
+      showToast(errorMessage, "error");
       return false;
     }
   };
 
   return (
-    <QuestionContext.Provider value={{ questions, addQuestion, loading }}>
+    <QuestionContext.Provider
+      value={{ questions, addQuestion, loading, error }}
+    >
       {children}
     </QuestionContext.Provider>
   );
@@ -48,8 +54,7 @@ export function QuestionProvider({ children }) {
 
 export function useQuestions() {
   const context = useContext(QuestionContext);
-  if (!context) {
+  if (!context)
     throw new Error("useQuestions must be used within a QuestionProvider");
-  }
   return context;
 }

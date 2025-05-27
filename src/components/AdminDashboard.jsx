@@ -1,6 +1,6 @@
-// src/components/AdminDashboard.jsx
+// frontend/src/components/AdminDashboard.jsx
 import { Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext.jsx";
+import { useAuth } from "../context/AuthContext";
 
 function AdminDashboard() {
   const { user, logout } = useAuth();
@@ -12,12 +12,9 @@ function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8">
       <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6 sm:p-8 transition-all duration-300">
-        {/* Heading */}
-        <h1 className="text-heading-lg sm:text-heading-lg font-extrabold text-center text-gray-800 mb-6 sm:mb-8 tracking-tight">
+        <h1 className="text-heading-lg font-extrabold text-center text-gray-800 mb-6 tracking-tight">
           Admin Dashboard
         </h1>
-
-        {/* Logout Button */}
         <div className="mb-6 text-center">
           <button
             onClick={handleLogout}
@@ -27,8 +24,6 @@ function AdminDashboard() {
             Logout
           </button>
         </div>
-
-        {/* Navigation Links */}
         <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
           <Link
             to="/add-question"
@@ -79,15 +74,49 @@ function AdminDashboard() {
             </p>
           </Link>
           <Link
-            to="/student-management"
+            to="/user-management"
             className="block p-4 bg-orange-50 rounded-lg shadow-sm hover:bg-orange-100 transition-colors duration-200 text-center"
-            aria-label="Manage Students"
+            aria-label="Manage Users"
           >
             <h2 className="text-subheading font-semibold text-orange-700">
-              Student Management
+              User Management
+            </h2>
+            <p className="text-body-md text-gray-600 mt-1">Add or edit users</p>
+          </Link>
+          <Link
+            to="/classroom-management"
+            className="block p-4 bg-green-50 rounded-lg shadow-sm hover:bg-green-100 transition-colors duration-200 text-center"
+            aria-label="Manage Classrooms"
+          >
+            <h2 className="text-subheading font-semibold text-green-700">
+              Classroom Management
             </h2>
             <p className="text-body-md text-gray-600 mt-1">
-              Add or edit students
+              Add or edit classrooms
+            </p>
+          </Link>
+          <Link
+            to="/manager-management"
+            className="block p-4 bg-blue-50 rounded-lg shadow-sm hover:bg-blue-100 transition-colors duration-200 text-center"
+            aria-label="Manage Managers"
+          >
+            <h2 className="text-subheading font-semibold text-blue-700">
+              Manager Management
+            </h2>
+            <p className="text-body-md text-gray-600 mt-1">
+              Assign or remove classroom managers
+            </p>
+          </Link>
+          <Link
+            to="/classroom-chart"
+            className="block p-4 bg-teal-50 rounded-lg shadow-sm hover:bg-teal-100 transition-colors duration-200 text-center"
+            aria-label="View Classroom Chart"
+          >
+            <h2 className="text-subheading font-semibold text-teal-700">
+              Classroom Chart
+            </h2>
+            <p className="text-body-md text-gray-600 mt-1">
+              View student distribution
             </p>
           </Link>
         </div>
