@@ -1,10 +1,11 @@
 // src/components/QuestionEditor.jsx
 import { useEffect, useRef } from "react";
 import Quill from "quill";
-import { MathfieldElement } from "mathlive";
-import "../quill.mathlive.js";
 import "quill/dist/quill.snow.css";
 import "mathlive/static.css";
+
+// Ensure MathLive is integrated with Quill (assuming quill.mathlive.js handles this)
+import "../quill.mathlive.js";
 
 const QuestionEditor = ({ onContentChange }) => {
   const editorRef = useRef(null);
@@ -20,7 +21,7 @@ const QuestionEditor = ({ onContentChange }) => {
           toolbar: [
             [{ header: [1, 2, false] }],
             ["bold", "italic", "underline"],
-            ["mathlive", "fraction", "exponent", "sqrt"], // Add square root button
+            ["mathlive", "fraction", "exponent", "sqrt"],
             ["clean"],
           ],
           mathlive: {},
@@ -36,21 +37,19 @@ const QuestionEditor = ({ onContentChange }) => {
         const tempDiv = document.createElement("div");
         tempDiv.innerHTML = content;
 
-        // Process all math-field elements
+        // Process math-field elements
         const mathFields = tempDiv.querySelectorAll("math-field");
         mathFields.forEach((mf) => {
           const latex =
             mf.getAttribute("data-latex") || mf.textContent || mf.innerHTML;
-          const newMathField = document.createElement("math-field");
-          newMathField.setAttribute("data-latex", latex);
-          newMathField.textContent = latex;
-          mf.getAttributeNames().forEach((attr) => {
-            if (attr !== "data-latex") {
-              mf.removeAttribute(attr);
-            }
-          });
           mf.innerHTML = "";
           mf.textContent = latex;
+          // Keep only the data-latex attribute
+          const dataLatex = mf.getAttribute("data-latex");
+          mf.removeAttribute("math-virtual-keyboard-policy");
+          mf.setAttribute("contenteditable", false);
+          mf.removeAttribute("tabindex");
+          mf.setAttribute("data-latex", dataLatex);
         });
 
         const cleanedContent = tempDiv.innerHTML;
@@ -72,12 +71,14 @@ const QuestionEditor = ({ onContentChange }) => {
     return () => {
       if (quillRef.current) {
         console.log("Cleaning up Quill event listeners");
-        quillRef.current.off("text-change");
+        //quillRef.current.off("text-change");
       }
     };
   }, [onContentChange]);
 
-  return <div ref={editorRef} className="bg-white border rounded-md" />;
+  return (
+    <div ref={editorRef} className="bg-white border rounded-md min-h-[200px]" />
+  );
 };
 
 export default QuestionEditor;

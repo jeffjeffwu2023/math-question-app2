@@ -36,12 +36,15 @@ export const submitAssignment = (id) =>
 export const getQuestions = () => API.get("/api/questions/");
 export const addQuestion = (question) => API.post("/api/questions/", question);
 
-// Category endpoints
-export const getCategories = () => API.get("/api/categories/");
-export const addCategory = (category) => API.post("/api/categories/", category);
-export const updateCategory = (name, category) =>
-  API.put(`/api/categories/${name}/`, category);
-export const deleteCategory = (name) => API.delete(`/api/categories/${name}/`);
+// Knowledge point endpoints
+export const getKnowledgePoints = (params = {}) =>
+  API.get("/api/knowledge-points/", { params });
+export const addKnowledgePoint = (knowledgePoint) =>
+  API.post("/api/knowledge-points/", knowledgePoint);
+export const updateKnowledgePoint = (id, knowledgePoint) =>
+  API.put(`/api/knowledge-points/${id}/`, knowledgePoint);
+export const deleteKnowledgePoint = (id) =>
+  API.delete(`/api/knowledge-points/${id}/`);
 
 // Answer endpoints
 export const addAnswer = (answer) => API.post("/api/answers/", answer);

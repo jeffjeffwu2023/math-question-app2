@@ -1,135 +1,163 @@
 // src/components/AddQuestion.jsx
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { useCategories } from "../context/CategoryContext.jsx";
-import { useQuestions } from "../context/QuestionContext.jsx";
-import { showToast } from "../utils/toast.js";
-import QuestionEditor from "./QuestionEditor.jsx";
-import QuestionPreview from "./QuestionPreview.jsx";
+import { useState, useCallback, useEffect } from "react";
+import { toast } from "react-toastify";
+import { API } from "../services/api";
+import { useNavigate } from "react-router-dom";
+import KnowledgePointSelector from "./KnowledgePointSelector";
+import QuestionEditor from "./QuestionEditor";
+import QuestionPreview from "./QuestionPreview";
+import { useTranslation } from "react-i18next";
 
 function AddQuestion() {
-  const { categories } = useCategories();
-  const { addQuestion } = useQuestions();
-  const [questionTitle, setQuestionTitle] = useState("");
-  const [questionContent, setQuestionContent] = useState("");
-  const [difficulty, setDifficulty] = useState("easy");
-  const [questionCategory, setQuestionCategory] = useState(
-    categories[0] || "Algebra"
-  );
- 
- 
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    title: "",
+    content: "",
+    difficulty: "easy",
+    knowledgePoints: [], // Array of knowledge_points _id strings
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const handleSave = () => {
-    if (!questionTitle.trim() || !questionContent.trim() ) {
-      showToast(
-        "Please enter a question title, content, and knowledge point.",
-        "error"
-      );
-      return;
-    }
-    const newQuestion = {
-      title: questionTitle,
-      content: questionContent,
-      difficulty,
-      category: questionCategory,
-    };
-    addQuestion(newQuestion);
-    showToast("Question saved successfully!", "success");
-    setQuestionTitle("");
-    setQuestionContent("");
-    setDifficulty("easy");
-    setQuestionCategory(categories[0] || "Algebra");
+  // Debug knowledgePoints changes
+  useEffect(() => {
+    console.log("Current knowledgePoints:", formData.knowledgePoints);
+  }, [formData.knowledgePoints]);
 
+  // Debug content changes
+  useEffect(() => {
+    console.log("Current content:", formData.content);
+  }, [formData.content]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    console.log(`Field changed: ${name} = ${value}`);
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleContentChange = (content) => {
+    console.log("Content changed--:", content);
+    setFormData((prev) => ({ ...prev, content }));
+  };
+
+  const handleKnowledgePointsChange = (points) => {
+    console.log("Updated knowledgePoints:", points);
+    setFormData((prev) => ({ ...prev, knowledgePoints: points }));
+  };
+
+  const handleSubmit = useCallback(
+    async (e) => {
+      e.preventDefault();
+      if (!formData.title.trim() || !formData.content.trim()) {
+        toast.error(t("please_fill_title_content"), {
+          toastId: "missing-fields",
+        });
+        return;
+      }
+      if (formData.knowledgePoints.length === 0) {
+        toast.error(t("please_select_knowledge_point"), {
+          toastId: "no-knowledge-points",
+        });
+        return;
+      }
+      setLoading(true);
+      try {
+        await API.post("/api/questions/", formData);
+        toast.success(t("question_added_successfully"), {
+          toastId: "add-question-success",
+        });
+        navigate("/admin-dashboard");
+      } catch (err) {
+        const errorMsg =
+          err.response?.data?.detail || t("failed_to_add_question");
+        setError(errorMsg);
+        toast.error(errorMsg, { toastId: "add-question-error" });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [formData, navigate, t]
+  );
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8">
-      <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6 sm:p-8 transition-all duration-300">
-        <h1 className="text-heading-lg font-extrabold text-center text-gray-800 mb-6 sm:mb-8 tracking-tight">
-          Add Math Question
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8 flex items-center justify-center">
+      <div className="max-w-2xl w-full bg-white rounded-xl shadow-md p-6 sm:p-8">
+        <h1 className="text-heading-lg font-extrabold text-center text-gray-800 mb-6">
+          {t("add_new_question")}
         </h1>
-        <div className="mb-6">
-          <Link
-            to="/admin-dashboard"
-            className="text-indigo-600 hover:text-indigo-800 font-medium text-body-md"
-            aria-label="Back to Dashboard"
-          >
-            ← Back to Dashboard
-          </Link>
-          <Link
-            to="/category-management"
-            className="ml-4 text-indigo-600 hover:text-indigo-800 font-medium text-body-md"
-            aria-label="Manage Categories"
-          >
-            Manage Categories
-          </Link>
-        </div>
-        <div className="mb-6">
-          <label className="block text-body-md font-semibold text-gray-700 mb-2">
-            Question Title
-          </label>
-          <input
-            type="text"
-            value={questionTitle}
-            onChange={(e) => setQuestionTitle(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 text-gray-800 placeholder-gray-400 transition-all duration-200 text-body-md"
-            placeholder="Enter question title"
-            aria-label="Question Title"
-          />
-        </div>
-        <div className="mb-6">
-          <label className="block text-body-md font-semibold text-gray-700 mb-2">
-            Category
-          </label>
-          <select
-            value={questionCategory}
-            onChange={(e) => setQuestionCategory(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 text-gray-800 bg-white transition-all duration-200 text-body-md"
-            aria-label="Select Category"
-          >
-            {categories.map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="mb-6">
-          <label className="block text-body-md font-semibold text-gray-700 mb-2">
-            Difficulty
-          </label>
-          <select
-            value={difficulty}
-            onChange={(e) => setDifficulty(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 text-gray-800 bg-white transition-all duration-200 text-body-md"
-            aria-label="Select Difficulty"
-          >
-            <option value="easy">Easy</option>
-            <option value="medium">Medium</option>
-            <option value="hard">Hard</option>
-          </select>
-        </div>
-        <div className="mb-6">
-          <label className="block text-body-md font-semibold text-gray-700 mb-2">
-            Question Content
-          </label>
-          <QuestionEditor onContentChange={setQuestionContent} />
-        </div>
-        <div className="mb-6">
-          <label className="block text-body-md font-semibold text-gray-700 mb-2">
-            Preview
-          </label>
-          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg min-h-[120px] shadow-sm">
-            <QuestionPreview content={questionContent} />
+        {error && <p className="text-red-500 mb-4 text-center">{error}</p>}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label
+              htmlFor="title"
+              className="block text-body-md font-medium text-gray-700"
+            >
+              {t("title")}
+            </label>
+            <input
+              type="text"
+              id="title"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              required
+              className="mt-1 w-full p-3 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder={t("enter_question_title")}
+            />
           </div>
-        </div>
-        <button
-          onClick={handleSave}
-          className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3 px-4 rounded-lg shadow-md hover:from-indigo-700 hover:to-indigo-800 focus:ring-4 focus:ring-indigo-300 focus:ring-opacity-50 transition-all duration-200 font-semibold text-subheading"
-          aria-label="Save Question"
-        >
-          Save Question
-        </button>
+
+          <div>
+            <label
+              htmlFor="content"
+              className="block text-body-md font-medium text-gray-700"
+            >
+              {t("content")}
+            </label>
+            <QuestionEditor onContentChange={handleContentChange} />
+          </div>
+          <div class="preview">
+            <label className=" block text-body-md font-medium text-gray-700">
+              {t("preview")}
+            </label>
+            <QuestionPreview content={formData.content} />
+          </div>
+          <div>
+            <label
+              htmlFor="difficulty"
+              className="block text-body-md font-medium text-gray-700"
+            >
+              {t("difficulty")}
+            </label>
+            <select
+              id="difficulty"
+              name="difficulty"
+              value={formData.difficulty}
+              onChange={handleChange}
+              className="mt-1 w-full p-3 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+            >
+              <option value="easy">{t("easy")}</option>
+              <option value="medium">{t("medium")}</option>
+              <option value="hard">{t("hard")}</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-body-md font-medium text-gray-700">
+              {t("knowledge_points")}
+            </label>
+            <KnowledgePointSelector
+              selectedPoints={formData.knowledgePoints}
+              setSelectedPoints={handleKnowledgePointsChange}
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            {loading ? t("adding") : t("add_question")}
+          </button>
+        </form>
       </div>
     </div>
   );

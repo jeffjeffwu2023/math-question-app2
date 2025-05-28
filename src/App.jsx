@@ -1,70 +1,150 @@
-// math-question-app2/src/App.jsx
-import { Link } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
-import { useAuth } from "./context/AuthContext";
+// src/App.jsx
+import { Routes, Route } from "react-router-dom";
+import { I18nextProvider } from "react-i18next";
+import i18n from "./i18n";
+import StudentLogin from "./components/StudentLogin";
+import AdminLogin from "./components/AdminLogin";
+import ParentLogin from "./components/ParentLogin";
+import AdminDashboard from "./components/AdminDashboard";
+import AddQuestion from "./components/AddQuestion";
+import UserManagement from "./components/UserManagement";
+import ProtectedRoute from "./components/ProtectedRoute";
+import StudentDashboard from "./components/StudentDashboard";
+import AssignHomework from "./components/AssignHomework";
+import AnswerHomework from "./components/AnswerHomework";
+import AnswerOneByOne from "./components/AnswerOneByOne";
+import PerformanceAnalysis from "./components/PerformanceAnalysis";
+import ParentDashboard from "./components/ParentDashboard";
+import TutorDashboard from "./components/TutorDashboard";
+import ClassroomManagement from "./components/ClassroomManagement";
+import KnowledgePointManagement from "./components/KnowledgePointManagement";
+import ManagerManagement from "./components/ManagerManagement";
+import ClassroomChart from "./components/ClassroomChart";
+import LandingPage from "./components/LandingPage";
 
 function App() {
-  const { user } = useAuth();
-
-  const navigate = useNavigate();
-  console.log("User is logged in:", user);
-
-  useEffect(() => {
-    if (user && user.role){
-      switch (user.role) {
-        case "admin":
-          navigate("/admin-dashboard");
-          break;
-        case "student":
-          navigate("/student-dashboard");
-          break;
-        case "tutor":
-          navigate("/tutor-dashboard");
-          break;
-        case "parent":
-          navigate("/parent-dashboard");
-          break;
-        default:
-          navigate("/");
-      }
-    }
-  }, [user, navigate]);
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8 flex items-center justify-center">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-md p-6 sm:p-8 transition-all duration-300">
-        <h1 className="text-heading-lg font-extrabold text-center text-gray-800 mb-6 tracking-tight">
-          Math Question App
-        </h1>
-        <div className="space-y-4">
-          <Link
-            to="/student-login"
-            className="block w-full py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-center font-semibold text-body-md"
-          >
-            Student Login
-          </Link>
-          <Link
-            to="/tutor-login"
-            className="block w-full py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 text-center font-semibold text-body-md"
-          >
-            Tutor Login
-          </Link>
-          <Link
-            to="/parent-login"
-            className="block w-full py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-center font-semibold text-body-md"
-          >
-            Parent Login
-          </Link>
-          <Link
-            to="/admin-login"
-            className="block w-full py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-center font-semibold text-body-md"
-          >
-            Admin Login
-          </Link>
-        </div>
-      </div>
-    </div>
+    <I18nextProvider i18n={i18n}>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/student-login" element={<StudentLogin />} />
+        <Route path="/admin-login" element={<AdminLogin />} />
+        <Route path="/parent-login" element={<ParentLogin />} />
+        <Route path="/tutor-login" element={<StudentLogin />} />
+        <Route
+          path="/student-dashboard"
+          element={
+            <ProtectedRoute allowedRole="student">
+              <StudentDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin-dashboard"
+          element={
+            <ProtectedRoute allowedRole="admin">
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/parent-dashboard"
+          element={
+            <ProtectedRoute allowedRole="parent">
+              <ParentDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tutor-dashboard"
+          element={
+            <ProtectedRoute allowedRole="tutor">
+              <TutorDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/add-question"
+          element={
+            <ProtectedRoute allowedRole="admin">
+              <AddQuestion />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/user-management"
+          element={
+            <ProtectedRoute allowedRole="admin">
+              <UserManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/knowledge-points"
+          element={
+            <ProtectedRoute allowedRole="admin">
+              <KnowledgePointManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/classroom-management"
+          element={
+            <ProtectedRoute allowedRole="admin">
+              <ClassroomManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manager-management"
+          element={
+            <ProtectedRoute allowedRole="admin">
+              <ManagerManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/classroom-chart"
+          element={
+            <ProtectedRoute allowedRole="admin">
+              <ClassroomChart />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/assign-homework"
+          element={
+            <ProtectedRoute allowedRole={["admin", "tutor"]}>
+              <AssignHomework />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/answer-homework/:assignmentId"
+          element={
+            <ProtectedRoute allowedRole="student">
+              <AnswerHomework />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/answer-one-by-one"
+          element={
+            <ProtectedRoute allowedRole="student">
+              <AnswerOneByOne />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/performance-analysis"
+          element={
+            <ProtectedRoute allowedRole={["student", "parent"]}>
+              <PerformanceAnalysis />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </I18nextProvider>
   );
 }
 

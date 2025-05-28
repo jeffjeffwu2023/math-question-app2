@@ -1,9 +1,11 @@
 // src/components/KnowledgePointSelector.jsx
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { getKnowledgePoints } from "../services/api";
 import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next";
 
 const KnowledgePointSelector = ({ selectedPoints, setSelectedPoints }) => {
+  const { t } = useTranslation();
   const [knowledgePoints, setKnowledgePoints] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({
@@ -11,38 +13,39 @@ const KnowledgePointSelector = ({ selectedPoints, setSelectedPoints }) => {
     strand: "",
     topic: "",
     skill: "",
-    version: "2025.01", // Default version
+    version: "2025.01",
   });
 
-  // Fetch knowledge points
   useEffect(() => {
     const fetchKnowledgePoints = async () => {
       setLoading(true);
+      console.log("Fetching knowledge points with filters:", filters);
       try {
-        const response = await axios.get(
-          "http://localhost:8000/api/knowledge-points",
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-            params: {
-              version: filters.version,
-            },
-          }
-        );
-        setKnowledgePoints(response.data);
+        const response = await getKnowledgePoints({ version: filters.version });
+        console.log("Fetched knowledge points:", response.data);
+        const dataWithIds = response.data.map((item) => ({
+          ...item,
+          _id: item.id,
+        }));
+        console.log("dataWithNewField:", dataWithIds);
+        setKnowledgePoints(dataWithIds);
+        localStorage.setItem("knowledgePoints", JSON.stringify(dataWithIds));
       } catch (error) {
-        toast.error("Failed to fetch knowledge points.", {
+        console.error("Failed to fetch knowledge points:", error);
+        toast.error(t("failed_to_fetch_knowledge_points"), {
           toastId: "fetch-kp-error",
         });
+        const cachedPoints = localStorage.getItem("knowledgePoints");
+        if (cachedPoints && !navigator.onLine) {
+          setKnowledgePoints(JSON.parse(cachedPoints));
+        }
       } finally {
         setLoading(false);
       }
     };
     fetchKnowledgePoints();
-  }, [filters.version]);
+  }, [filters.version, t]);
 
-  // Handle filter changes
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({
       ...prev,
@@ -53,7 +56,6 @@ const KnowledgePointSelector = ({ selectedPoints, setSelectedPoints }) => {
     }));
   };
 
-  // Get unique values for dropdowns
   const getUniqueValues = (key, filterKey = null, filterValue = null) => {
     return [
       ...new Set(
@@ -64,16 +66,17 @@ const KnowledgePointSelector = ({ selectedPoints, setSelectedPoints }) => {
     ].sort();
   };
 
-  // Toggle sub-knowledge point selection
   const toggleSelection = (pointId) => {
-    setSelectedPoints((prev) =>
-      prev.includes(pointId)
-        ? prev.filter((id) => id !== pointId)
-        : [...prev, pointId]
-    );
+    console.log("Toggling point:", pointId);
+    const newPoints = Array.isArray(selectedPoints)
+      ? selectedPoints.includes(pointId)
+        ? selectedPoints.filter((id) => id !== pointId)
+        : [...selectedPoints, pointId]
+      : [pointId];
+    console.log("New selected points:", newPoints);
+    setSelectedPoints(newPoints);
   };
 
-  // Filter sub-knowledge points based on selections
   const filteredPoints = knowledgePoints.filter(
     (kp) =>
       (!filters.grade || kp.grade === filters.grade) &&
@@ -86,55 +89,51 @@ const KnowledgePointSelector = ({ selectedPoints, setSelectedPoints }) => {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {/* Grade Dropdown */}
         <select
           value={filters.grade}
           onChange={(e) => handleFilterChange("grade", e.target.value)}
           className="p-3 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
         >
-          <option value="">Select Grade</option>
+          <option value="">{t("select_grade")}</option>
           {getUniqueValues("grade").map((grade) => (
             <option key={grade} value={grade}>
               {grade}
             </option>
           ))}
         </select>
-        {/* Strand Dropdown */}
         <select
           value={filters.strand}
           onChange={(e) => handleFilterChange("strand", e.target.value)}
           className="p-3 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
           disabled={!filters.grade}
         >
-          <option value="">Select Strand</option>
+          <option value="">{t("select_strand")}</option>
           {getUniqueValues("strand", "grade", filters.grade).map((strand) => (
             <option key={strand} value={strand}>
               {strand}
             </option>
           ))}
         </select>
-        {/* Topic Dropdown */}
         <select
           value={filters.topic}
           onChange={(e) => handleFilterChange("topic", e.target.value)}
           className="p-3 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
           disabled={!filters.strand}
         >
-          <option value="">Select Topic</option>
+          <option value="">{t("select_topic")}</option>
           {getUniqueValues("topic", "strand", filters.strand).map((topic) => (
             <option key={topic} value={topic}>
               {topic}
             </option>
           ))}
         </select>
-        {/* Skill Dropdown */}
         <select
           value={filters.skill}
           onChange={(e) => handleFilterChange("skill", e.target.value)}
           className="p-3 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
           disabled={!filters.topic}
         >
-          <option value="">Select Skill</option>
+          <option value="">{t("select_skill")}</option>
           {getUniqueValues("skill", "topic", filters.topic).map((skill) => (
             <option key={skill} value={skill}>
               {skill}
@@ -142,21 +141,24 @@ const KnowledgePointSelector = ({ selectedPoints, setSelectedPoints }) => {
           ))}
         </select>
       </div>
-      {/* Sub-Knowledge Points Checkboxes */}
       <div className="max-h-48 overflow-y-auto border border-gray-300 p-3 rounded-md bg-gray-50">
         {loading ? (
-          <p className="text-gray-500">Loading...</p>
+          <p className="text-gray-500">{t("loading")}</p>
         ) : filteredPoints.length === 0 ? (
-          <p className="text-gray-500">No knowledge points available.</p>
+          <p className="text-gray-500">{t("no_knowledge_points_available")}</p>
         ) : (
           filteredPoints.map((point) => (
             <div key={point._id} className="flex items-center mb-2">
               <input
                 type="checkbox"
                 id={`kp-${point._id}`}
-                checked={selectedPoints.includes(point._id)}
+                checked={
+                  Array.isArray(selectedPoints) &&
+                  selectedPoints.includes(point._id)
+                }
                 onChange={() => toggleSelection(point._id)}
-                className="mr-2 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                className="mr-2 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded pointer-events-auto"
+                style={{ pointerEvents: "auto" }}
               />
               <label
                 htmlFor={`kp-${point._id}`}
