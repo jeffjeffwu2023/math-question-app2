@@ -1,94 +1,90 @@
 // src/components/ParentLogin.jsx
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { showToast } from "../utils/toast";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext"; // Named import
+import { useTranslation } from "react-i18next";
 
-function ParentLogin() {
-  const { login } = useAuth();
+const ParentLogin = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  const [parentId, setParentId] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const { login } = useAuth(); // Use 'login' instead of 'loginUser'
+  const [credentials, setCredentials] = useState({
+    username: "",
+    password: "",
+  });
+  const [error, setError] = useState(null);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setCredentials((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    const success = await login(parentId, password, "parent");
-    if (success) {
-      showToast(`Welcome, ${parentId}!`, "success");
+    console.log("Attempting login with credentials:", credentials);
+    try {
+      await login(credentials.username, credentials.password, "parent"); // Use 'login'
       navigate("/parent-dashboard");
-    } else {
-      setError("Invalid parent ID or password.");
-      showToast("Invalid parent ID or password.", "error");
+    } catch (error) {
+      console.error("Login error:", error);
+      setError(t("invalid_credentials"));
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8 flex items-center justify-center">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-md p-6 sm:p-8">
-        <h1 className="text-heading-lg font-extrabold text-center text-gray-800 mb-6">
-          Parent Login
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-white rounded-xl shadow-md p-6">
+        <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">
+          {t("parent_login")}
         </h1>
-        {error && (
-          <p className="text-red-600 text-body-md text-center mb-4">{error}</p>
-        )}
-        <form onSubmit={handleLogin}>
-          <div className="mb-6">
-            <label className="block text-body-md font-semibold text-gray-700 mb-2">
-              Parent ID
+        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <label
+              htmlFor="username"
+              className="block text-sm font-medium text-gray-700"
+            >
+              {t("username")}
             </label>
             <input
               type="text"
-              value={parentId}
-              onChange={(e) => setParentId(e.target.value)}
-              className="w-full px-4 py-3 border rounded-lg text-body-md"
-              placeholder="Enter your parent ID"
+              id="username"
+              name="username"
+              value={credentials.username}
+              onChange={handleChange}
+              required
+              className="mt-1 w-full p-3 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder={t("enter_username")}
             />
           </div>
-          <div className="mb-6">
-            <label className="block text-body-md font-semibold text-gray-700 mb-2">
-              Password
+          <div>
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700"
+            >
+              {t("password")}
             </label>
             <input
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border rounded-lg text-body-md"
-              placeholder="Enter your password"
+              id="password"
+              name="password"
+              value={credentials.password}
+              onChange={handleChange}
+              required
+              className="mt-1 w-full p-3 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder={t("enter_password")}
             />
           </div>
-          <div className="text-center">
-            <button
-              type="submit"
-              className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold text-subheading"
-            >
-              Login
-            </button>
-          </div>
+          <button
+            type="submit"
+            className="w-full py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            {t("login")}
+          </button>
         </form>
-        <div className="mt-6 text-center">
-          <p className="text-body-md text-gray-600">
-            Are you a student?{" "}
-            <Link
-              to="/student-login"
-              className="text-indigo-600 hover:text-indigo-800"
-            >
-              Login here
-            </Link>
-          </p>
-          <p className="text-body-md text-gray-600">
-            Are you an admin?{" "}
-            <Link
-              to="/admin-login"
-              className="text-indigo-600 hover:text-indigo-800"
-            >
-              Login here
-            </Link>
-          </p>
-        </div>
       </div>
     </div>
   );
-}
+};
 
 export default ParentLogin;

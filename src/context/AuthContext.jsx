@@ -24,6 +24,10 @@ export function AuthProvider({ children }) {
     try {
       const response = await API.post("/api/auth/login/", { id, password });
       const { access_token, user } = response.data;
+
+      console.log("Login response:", response.data);
+      console.log("role---", role);
+
       if (user.role !== role) {
         throw new Error("Invalid role");
       }

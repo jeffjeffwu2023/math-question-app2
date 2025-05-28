@@ -24,6 +24,7 @@ export const addUser = (user) => API.post("/api/users/", user);
 export const updateUser = (id, user) => API.put(`/api/users/${id}/`, user);
 export const deleteUser = (id) => API.delete(`/api/users/${id}/`);
 
+
 // Assignment endpoints
 export const createAssignment = (assignment) =>
   API.post("/api/assignments/", assignment);
