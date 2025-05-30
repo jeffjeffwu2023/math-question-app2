@@ -1,8 +1,8 @@
 // src/context/AuthContext.jsx
 import { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { API, login } from "../services/api.js";
-import { showToast } from "../utils/toast.js";
+import { API } from "../services/api";
+import { showToast } from "../utils/toast";
 
 const AuthContext = createContext();
 
@@ -14,31 +14,37 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      // Optionally verify token with backend
       setUser(JSON.parse(localStorage.getItem("user") || "{}"));
     }
     setLoading(false);
   }, []);
 
-  const loginUser = async (id, password, role) => {
+  const loginUser = async (email, password) => {
     try {
-      const response = await API.post("/api/auth/login/", { id, password });
+      const response = await API.post("/api/auth/login/", { email, password });
       const { access_token, user } = response.data;
 
       console.log("Login response:", response.data);
-      console.log("role---", role);
 
-      if (user.role !== role) {
-        throw new Error("Invalid role");
-      }
       localStorage.setItem("token", access_token);
       localStorage.setItem("user", JSON.stringify(user));
       setUser(user);
       API.defaults.headers.common["Authorization"] = `Bearer ${access_token}`;
       showToast("Login successful!", "success");
-      return true;
+
+      // Redirect based on role
+      if (user.role === "student") {
+        navigate("/student-dashboard");
+      } else if (user.role === "tutor") {
+        navigate("/tutor-dashboard");
+      } else if (user.role === "admin") {
+        navigate("/admin-dashboard");
+      } else {
+        throw new Error("Invalid role");
+      }
+      return user; // Return user for frontend use
     } catch (error) {
-      showToast("Login failed. Check credentials.", "error");
+      showToast("Login failed. Check credentials or role.", "error");
       console.error("Login error:", error);
       return false;
     }

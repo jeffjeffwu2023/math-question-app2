@@ -2,9 +2,7 @@
 import { Routes, Route } from "react-router-dom";
 import { I18nextProvider } from "react-i18next";
 import i18n from "./i18n";
-import StudentLogin from "./components/StudentLogin";
-import AdminLogin from "./components/AdminLogin";
-import ParentLogin from "./components/ParentLogin";
+import Login from "./components/Login"; // New unified login
 import AdminDashboard from "./components/AdminDashboard";
 import AddQuestion from "./components/AddQuestion";
 import UserManagement from "./components/UserManagement";
@@ -27,10 +25,7 @@ function App() {
     <I18nextProvider i18n={i18n}>
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/student-login" element={<StudentLogin />} />
-        <Route path="/admin-login" element={<AdminLogin />} />
-        <Route path="/parent-login" element={<ParentLogin />} />
-        <Route path="/tutor-login" element={<StudentLogin />} />
+        <Route path="/login" element={<Login />} /> {/* Unified login */}
         <Route
           path="/student-dashboard"
           element={

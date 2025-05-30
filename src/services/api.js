@@ -19,7 +19,7 @@ export const login = (id, password) =>
   API.post("/api/auth/login/", { id, password });
 
 // User endpoints
-export const getUsers = () => API.get("/api/users/");
+export const getUsers = (filters = {}) => API.get("/api/users/", { params: filters });
 export const addUser = (user) => API.post("/api/users/", user);
 export const updateUser = (id, user) => API.put(`/api/users/${id}/`, user);
 export const deleteUser = (id) => API.delete(`/api/users/${id}/`);

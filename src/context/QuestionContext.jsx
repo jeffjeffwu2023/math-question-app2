@@ -1,4 +1,5 @@
-import React, { createContext, useState, useEffect } from "react";
+// src/context/QuestionContext.jsx
+import React, { createContext, useContext, useState, useEffect } from "react";
 import { getQuestions, addQuestion } from "../services/api";
 
 export const QuestionContext = createContext();
@@ -41,4 +42,12 @@ export const QuestionProvider = ({ children }) => {
       {children}
     </QuestionContext.Provider>
   );
+};
+
+export const useQuestions = () => {
+  const context = useContext(QuestionContext);
+  if (!context) {
+    throw new Error("useQuestions must be used within a QuestionProvider");
+  }
+  return context;
 };

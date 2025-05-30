@@ -1,36 +1,52 @@
 // src/components/UserManagement.jsx
-import React, { useState, useEffect } from "react";
-import { toast } from "react-toastify";
-import { addUser } from "../services/api"; // Explicitly import addUser
+import { useEffect, useState } from "react";
+import { getUsers, addUser } from "../services/api";
+import { showToast } from "../utils/toast";
 import { useTranslation } from "react-i18next";
-import { v4 as uuidv4 } from "uuid"; // Import uuid for generating unique IDs
+import { v4 as uuidv4 } from "uuid";
 
 const UserManagement = () => {
   const { t } = useTranslation();
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    id: "", // Will be set using uuid
+    id: "",
     name: "",
     email: "",
     password: "",
-    role: "parent", // Default to parent
+    role: "parent",
     language: "en",
     tutorId: null,
     studentIds: [],
     classroomIds: [],
   });
   const [error, setError] = useState(null);
-  const [users, setUsers] = useState([]); // For displaying existing users (optional)
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setLoading(true);
+      try {
+        const response = await getUsers({ role: "student" }); // Fetch students only
+        setUsers(response.data);
+      } catch (error) {
+        showToast("Failed to fetch users.", "error");
+        console.error("Error fetching users:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUsers();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    console.log(`Field changed: ${name} = ${value}`);
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleAddUser = async (e) => {
     e.preventDefault();
     const userData = {
-      id: uuidv4(), // Generate unique ID
+      id: uuidv4(),
       name: formData.name,
       email: formData.email,
       password: formData.password,
@@ -38,22 +54,12 @@ const UserManagement = () => {
       language: formData.language,
       studentIds: formData.studentIds || [],
       classroomIds: formData.classroomIds || [],
+      ...(formData.role === "student" &&
+        formData.tutorId && { tutorId: formData.tutorId }),
     };
-    // Only include tutorId if it's a non-empty string (omit if null or empty)
-    if (
-      formData.role === "student" &&
-      formData.tutorId &&
-      formData.tutorId.trim() !== ""
-    ) {
-      userData.tutorId = formData.tutorId;
-    }
-    console.log("Attempting to add user with addUser:", userData);
     try {
-      const response = await addUser(userData);
-      console.log("User added successfully:", response.data);
-      toast.success(t("user_added_successfully"), {
-        toastId: "add-user-success",
-      });
+      await addUser(userData);
+      showToast(t("user_added_successfully"), "success");
       setFormData({
         id: "",
         name: "",
@@ -64,28 +70,14 @@ const UserManagement = () => {
         tutorId: null,
         studentIds: [],
         classroomIds: [],
-      }); // Reset form
-      // Optionally refresh user list
-      // setUsers([...users, response.data]);
+      });
+      // Refresh users
+      const response = await getUsers({ role: "student" });
+      setUsers(response.data);
     } catch (error) {
-      console.error("Error adding user:", error);
-      console.error("Error response:", error.response?.data);
-      // Handle FastAPI validation errors (detail might be an array or string)
-      let errorMsg;
-      if (error.response?.data?.detail) {
-        const detail = error.response.data.detail;
-        if (Array.isArray(detail)) {
-          // Validation error array (e.g., [{type, loc, msg, input}])
-          errorMsg = detail.map((err) => err.msg).join("; ");
-        } else {
-          // String error (e.g., "User ID already exists")
-          errorMsg = detail;
-        }
-      } else {
-        errorMsg = t("failed_to_add_user");
-      }
+      const errorMsg = error.response?.data?.detail || t("failed_to_add_user");
       setError(errorMsg);
-      toast.error(errorMsg, { toastId: "add-user-error" });
+      showToast(errorMsg, "error");
     }
   };
 
@@ -96,6 +88,26 @@ const UserManagement = () => {
           {t("user_management")}
         </h1>
         {error && <p className="text-red-500 mb-4 text-center">{error}</p>}
+        {loading ? (
+          <p>Loading...</p>
+        ) : (
+          <div>
+            <h2 className="text-subheading font-semibold text-gray-800 mb-4">
+              Students
+            </h2>
+            {users.length === 0 ? (
+              <p>No students found.</p>
+            ) : (
+              <ul>
+                {users.map((user) => (
+                  <li key={user.id}>
+                    {user.name} ({user.email})
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
         <form onSubmit={handleAddUser} className="space-y-6">
           <div>
             <label
@@ -111,8 +123,7 @@ const UserManagement = () => {
               value={formData.name}
               onChange={handleChange}
               required
-              className="mt-1 w-full p-3 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-              placeholder={t("enter_name")}
+              className="mt-1 w-full p-3 border border-gray-300 rounded-md"
             />
           </div>
           <div>
@@ -129,8 +140,7 @@ const UserManagement = () => {
               value={formData.email}
               onChange={handleChange}
               required
-              className="mt-1 w-full p-3 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-              placeholder={t("enter_email")}
+              className="mt-1 w-full p-3 border border-gray-300 rounded-md"
             />
           </div>
           <div>
@@ -147,8 +157,7 @@ const UserManagement = () => {
               value={formData.password}
               onChange={handleChange}
               required
-              className="mt-1 w-full p-3 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-              placeholder={t("enter_password")}
+              className="mt-1 w-full p-3 border border-gray-300 rounded-md"
             />
           </div>
           <div>
@@ -163,7 +172,7 @@ const UserManagement = () => {
               name="role"
               value={formData.role}
               onChange={handleChange}
-              className="mt-1 w-full p-3 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+              className="mt-1 w-full p-3 border border-gray-300 rounded-md"
             >
               <option value="parent">{t("parent")}</option>
               <option value="student">{t("student")}</option>
@@ -186,14 +195,13 @@ const UserManagement = () => {
                 name="tutorId"
                 value={formData.tutorId || ""}
                 onChange={handleChange}
-                className="mt-1 w-full p-3 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder={t("enter_tutor_id")}
+                className="mt-1 w-full p-3 border border-gray-300 rounded-md"
               />
             </div>
           )}
           <button
             type="submit"
-            className="w-full py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full py-3 bg-indigo-600 text-white rounded-md"
           >
             {t("add_user")}
           </button>

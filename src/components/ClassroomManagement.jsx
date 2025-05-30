@@ -1,206 +1,227 @@
 // src/components/ClassroomManagement.jsx
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import {
+  getUsers,
+  getClassrooms,
+  createClassroom,
+  updateClassroom,
+  deleteClassroom,
+} from "../services/api";
 import { showToast } from "../utils/toast";
-import { API } from "../services/api";
-import { useUsers } from "../context/UserContext";
+import { v4 as uuidv4 } from "uuid";
 
-function ClassroomManagement() {
-  const { users } = useUsers();
+const ClassroomManagement = () => {
+  const { t } = useTranslation();
   const [classrooms, setClassrooms] = useState([]);
-  const [newClassroom, setNewClassroom] = useState({
+  const [students, setStudents] = useState([]);
+  const [tutors, setTutors] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    id: "",
     name: "",
-    address: { street: "", city: "", state: "", zip: "", country: "" },
-    managerIds: [],
+    studentIds: [],
+    tutorId: null,
   });
+  const [error, setError] = useState(null);
+  const [selectedClassroomId, setSelectedClassroomId] = useState(null);
 
-  const fetchClassrooms = async () => {
+  // Fetch classrooms on mount
+  useEffect(() => {
+    const fetchClassrooms = async () => {
+      setLoading(true);
+      try {
+        const response = await getClassrooms();
+        setClassrooms(response.data);
+      } catch (error) {
+        showToast(t("failed_to_fetch_classrooms"), "error");
+        console.error("Error fetching classrooms:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchClassrooms();
+  }, [t]);
+
+  // Fetch students and tutors when a classroom is selected
+  useEffect(() => {
+    const fetchUsers = async () => {
+      if (!selectedClassroomId) return;
+      setLoading(true);
+      try {
+        const [studentResponse, tutorResponse] = await Promise.all([
+          getUsers({ role: "student", classroomIds: selectedClassroomId }),
+          getUsers({ role: "tutor" }),
+        ]);
+        setStudents(studentResponse.data);
+        setTutors(tutorResponse.data);
+      } catch (error) {
+        showToast(t("failed_to_fetch_users"), "error");
+        console.error("Error fetching users:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUsers();
+  }, [selectedClassroomId, t]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleAddClassroom = async (e) => {
+    e.preventDefault();
+    const classroomData = {
+      id: uuidv4(),
+      name: formData.name,
+      studentIds: formData.studentIds || [],
+      tutorId: formData.tutorId || null,
+    };
     try {
-      const response = await API.get("/api/classrooms/");
+      await createClassroom(classroomData);
+      showToast(t("classroom_added_successfully"), "success");
+      setFormData({ id: "", name: "", studentIds: [], tutorId: null });
+      const response = await getClassrooms();
       setClassrooms(response.data);
     } catch (error) {
-      showToast("Failed to fetch classrooms.", "error");
+      const errorMsg =
+        error.response?.data?.detail || t("failed_to_add_classroom");
+      setError(errorMsg);
+      showToast(errorMsg, "error");
     }
   };
 
-  const handleAddClassroom = async () => {
-    if (!newClassroom.name || !newClassroom.address.street) {
-      showToast("Please fill in all required fields.", "error");
-      return;
-    }
+  const handleDeleteClassroom = async (classroomId) => {
     try {
-      const response = await API.post("/api/classrooms/", newClassroom);
-      setClassrooms((prev) => [...prev, response.data]);
-      setNewClassroom({
-        name: "",
-        address: { street: "", city: "", state: "", zip: "", country: "" },
-        managerIds: [],
-      });
-      showToast("Classroom added successfully!", "success");
+      await deleteClassroom(classroomId);
+      showToast(t("classroom_deleted_successfully"), "success");
+      const response = await getClassrooms();
+      setClassrooms(response.data);
+      if (selectedClassroomId === classroomId) {
+        setSelectedClassroomId(null);
+        setStudents([]);
+        setTutors([]);
+      }
     } catch (error) {
-      showToast("Failed to add classroom.", "error");
+      showToast(t("failed_to_delete_classroom"), "error");
+      console.error("Error deleting classroom:", error);
     }
   };
-
-  React.useEffect(() => {
-    fetchClassrooms();
-  }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8">
-      <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6 sm:p-8">
-        <h1 className="text-heading-lg font-extrabold text-center text-gray-800 mb-8">
-          Classroom Management
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8 flex items-center justify-center">
+      <div className="max-w-2xl w-full bg-white rounded-xl shadow-md p-6 sm:p-8">
+        <h1 className="text-heading-lg font-extrabold text-center text-gray-800 mb-6">
+          {t("classroom_management")}
         </h1>
-        <Link
-          to="/admin-dashboard"
-          className="text-indigo-600 hover:text-indigo-800 font-medium text-body-md mb-6 block"
-        >
-          ← Back to Dashboard
-        </Link>
-        <div className="mb-8">
-          <h2 className="text-subheading font-semibold text-gray-800 mb-4">
-            Add New Classroom
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <input
-              type="text"
-              value={newClassroom.name}
-              onChange={(e) =>
-                setNewClassroom({ ...newClassroom, name: e.target.value })
-              }
-              placeholder="Classroom Name"
-              className="w-full px-4 py-3 border rounded-lg text-body-md"
-              aria-label="Classroom Name"
-            />
-            <input
-              type="text"
-              value={newClassroom.address.street}
-              onChange={(e) =>
-                setNewClassroom({
-                  ...newClassroom,
-                  address: { ...newClassroom.address, street: e.target.value },
-                })
-              }
-              placeholder="Street Address"
-              className="w-full px-4 py-3 border rounded-lg text-body-md"
-              aria-label="Street Address"
-            />
-            <input
-              type="text"
-              value={newClassroom.address.city}
-              onChange={(e) =>
-                setNewClassroom({
-                  ...newClassroom,
-                  address: { ...newClassroom.address, city: e.target.value },
-                })
-              }
-              placeholder="City"
-              className="w-full px-4 py-3 border rounded-lg text-body-md"
-              aria-label="City"
-            />
-            <input
-              type="text"
-              value={newClassroom.address.state}
-              onChange={(e) =>
-                setNewClassroom({
-                  ...newClassroom,
-                  address: { ...newClassroom.address, state: e.target.value },
-                })
-              }
-              placeholder="State"
-              className="w-full px-4 py-3 border rounded-lg text-body-md"
-              aria-label="State"
-            />
-            <input
-              type="text"
-              value={newClassroom.address.zip}
-              onChange={(e) =>
-                setNewClassroom({
-                  ...newClassroom,
-                  address: { ...newClassroom.address, zip: e.target.value },
-                })
-              }
-              placeholder="ZIP Code"
-              className="w-full px-4 py-3 border rounded-lg text-body-md"
-              aria-label="ZIP Code"
-            />
-            <input
-              type="text"
-              value={newClassroom.address.country}
-              onChange={(e) =>
-                setNewClassroom({
-                  ...newClassroom,
-                  address: { ...newClassroom.address, country: e.target.value },
-                })
-              }
-              placeholder="Country"
-              className="w-full px-4 py-3 border rounded-lg text-body-md"
-              aria-label="Country"
-            />
-            <select
-              multiple
-              value={newClassroom.managerIds}
-              onChange={(e) =>
-                setNewClassroom({
-                  ...newClassroom,
-                  managerIds: Array.from(
-                    e.target.selectedOptions,
-                    (option) => option.value
-                  ),
-                })
-              }
-              className="w-full px-4 py-3 border rounded-lg text-body-md"
-              aria-label="Select Managers"
-            >
-              {users
-                .filter((s) => s.role === "manager")
-                .map((manager) => (
-                  <option key={manager.id} value={manager.id}>
-                    {manager.name} ({manager.id})
-                  </option>
+        {error && <p className="text-red-500 mb-4 text-center">{error}</p>}
+        {loading ? (
+          <p className="text-center">{t("loading")}</p>
+        ) : (
+          <div className="mb-8">
+            <h2 className="text-subheading font-semibold text-gray-800 mb-4">
+              {t("classrooms")}
+            </h2>
+            {classrooms.length === 0 ? (
+              <p className="text-gray-600 text-body-md">{t("no_classrooms")}</p>
+            ) : (
+              <ul className="space-y-4">
+                {classrooms.map((classroom) => (
+                  <li
+                    key={classroom.id}
+                    className="p-4 bg-gray-50 rounded-lg border"
+                  >
+                    <p className="text-body-md text-gray-800">
+                      <span className="font-medium">{t("name")}:</span>{" "}
+                      {classroom.name}
+                    </p>
+                    <button
+                      onClick={() => setSelectedClassroomId(classroom.id)}
+                      className="text-indigo-600 hover:text-indigo-800 font-medium text-body-md mr-2"
+                    >
+                      {t("view_details")}
+                    </button>
+                    <button
+                      onClick={() => handleDeleteClassroom(classroom.id)}
+                      className="text-red-600 hover:text-red-800 font-medium text-body-md"
+                    >
+                      {t("delete")}
+                    </button>
+                  </li>
                 ))}
-            </select>
+              </ul>
+            )}
+          </div>
+        )}
+        {selectedClassroomId && (
+          <div className="mb-8">
+            <h2 className="text-subheading font-semibold text-gray-800 mb-4">
+              {t("classroom_details")}
+            </h2>
+            <div>
+              <p className="text-body-md text-gray-800 mb-2">
+                <span className="font-medium">{t("students")}:</span>
+              </p>
+              {students.length === 0 ? (
+                <p className="text-gray-600 text-body-md">{t("no_students")}</p>
+              ) : (
+                <ul className="space-y-2">
+                  {students.map((student) => (
+                    <li key={student.id} className="text-body-md text-gray-800">
+                      {student.name} ({student.email})
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div className="mt-4">
+              <p className="text-body-md text-gray-800 mb-2">
+                <span className="font-medium">{t("tutors")}:</span>
+              </p>
+              {tutors.length === 0 ? (
+                <p className="text-gray-600 text-body-md">{t("no_tutors")}</p>
+              ) : (
+                <ul className="space-y-2">
+                  {tutors.map((tutor) => (
+                    <li key={tutor.id} className="text-body-md text-gray-800">
+                      {tutor.name} ({tutor.email})
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
+        <form onSubmit={handleAddClassroom} className="space-y-6">
+          <div>
+            <label
+              htmlFor="name"
+              className="block text-body-md font-medium text-gray-700"
+            >
+              {t("classroom_name")}
+            </label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+              className="mt-1 w-full p-3 border border-gray-300 rounded-md"
+              placeholder={t("enter_classroom_name")}
+            />
           </div>
           <button
-            onClick={handleAddClassroom}
-            className="mt-4 px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold text-body-md"
+            type="submit"
+            className="w-full py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
           >
-            Add Classroom
+            {t("add_classroom")}
           </button>
-        </div>
-        <h2 className="text-subheading font-semibold text-gray-800 mb-4">
-          Existing Classrooms
-        </h2>
-        {classrooms.length === 0 ? (
-          <p className="text-gray-600 text-body-md">No classrooms available.</p>
-        ) : (
-          <ul className="space-y-4">
-            {classrooms.map((classroom) => (
-              <li
-                key={classroom.id}
-                className="p-4 bg-gray-50 rounded-lg border"
-              >
-                <p className="text-body-md text-gray-800">
-                  <span className="font-medium">Name:</span> {classroom.name}
-                </p>
-                <p className="text-body-md text-gray-800">
-                  <span className="font-medium">Address:</span>{" "}
-                  {classroom.address.street}, {classroom.address.city},{" "}
-                  {classroom.address.state} {classroom.address.zip},{" "}
-                  {classroom.address.country}
-                </p>
-                <p className="text-body-md text-gray-800">
-                  <span className="font-medium">Managers:</span>{" "}
-                  {classroom.managerIds.join(", ")}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
+        </form>
       </div>
     </div>
   );
-}
+};
 
 export default ClassroomManagement;

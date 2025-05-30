@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
-import { getChildren, getAssignments, analyzeStudent } from "../services/api";
+import {getAssignments, analyzeStudent } from "../services/api";
 import { showToast } from "../utils/toast";
 
 const ParentDashboard = () => {
