@@ -1,5 +1,5 @@
-// src/components/AddQuestion.jsx
 import { useState, useCallback, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { API } from "../services/api";
 import { useNavigate } from "react-router-dom";
@@ -15,17 +15,15 @@ function AddQuestion() {
     title: "",
     content: "",
     difficulty: "easy",
-    knowledgePoints: [], // Array of knowledge_points _id strings
+    knowledgePoints: [],
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Debug knowledgePoints changes
   useEffect(() => {
     console.log("Current knowledgePoints:", formData.knowledgePoints);
   }, [formData.knowledgePoints]);
 
-  // Debug content changes
   useEffect(() => {
     console.log("Current content:", formData.content);
   }, [formData.content]);
@@ -83,6 +81,12 @@ function AddQuestion() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8 flex items-center justify-center">
       <div className="max-w-2xl w-full bg-white rounded-xl shadow-md p-6 sm:p-8">
+        <Link
+          to="/admin-dashboard"
+          className="text-indigo-600 hover:text-indigo-800 font-medium text-body-md mb-4 inline-block"
+        >
+          {t("back_to_dashboard")}
+        </Link>
         <h1 className="text-heading-lg font-extrabold text-center text-gray-800 mb-6">
           {t("add_new_question")}
         </h1>
@@ -106,7 +110,6 @@ function AddQuestion() {
               placeholder={t("enter_question_title")}
             />
           </div>
-
           <div>
             <label
               htmlFor="content"
@@ -116,8 +119,8 @@ function AddQuestion() {
             </label>
             <QuestionEditor onContentChange={handleContentChange} />
           </div>
-          <div class="preview">
-            <label className=" block text-body-md font-medium text-gray-700">
+          <div className="preview">
+            <label className="block text-body-md font-medium text-gray-700">
               {t("preview")}
             </label>
             <QuestionPreview content={formData.content} />

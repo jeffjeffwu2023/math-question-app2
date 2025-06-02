@@ -1,9 +1,15 @@
-// src/components/AdminDashboard.jsx
-import { Link } from "react-router-dom";
+import React from "react";
+import { Link, Routes, Route } from "react-router-dom";
+import UserManagement from "./UserManagement";
+import CourseManagement from "./CourseManagement";
+import KnowledgePointManagement from "./KnowledgePointManagement";
+import ClassroomManagement from "./ClassroomManagement";
+import QuestionEditor from "./QuestionEditor";
+import TutorManagement from "./TutorManagement";
 import { useAuth } from "../context/AuthContext";
 import { useTranslation } from "react-i18next";
 
-function AdminDashboard() {
+const AdminDashboard = () => {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
 
@@ -39,7 +45,7 @@ function AdminDashboard() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Link
-            to="/add-question"
+            to="/admin/add-question"
             className="p-6 bg-indigo-50 rounded-lg text-center hover:bg-indigo-100 transition-colors"
           >
             <h2 className="text-subheading font-semibold text-indigo-700">
@@ -50,7 +56,7 @@ function AdminDashboard() {
             </p>
           </Link>
           <Link
-            to="/user-management"
+            to="/admin/user-management"
             className="p-6 bg-indigo-50 rounded-lg text-center hover:bg-indigo-100 transition-colors"
           >
             <h2 className="text-subheading font-semibold text-indigo-700">
@@ -59,7 +65,16 @@ function AdminDashboard() {
             <p className="text-body-md text-gray-600">{t("manage_users")}</p>
           </Link>
           <Link
-            to="/knowledge-points"
+            to="/admin/tutor-management"
+            className="p-6 bg-indigo-50 rounded-lg text-center hover:bg-indigo-100 transition-colors"
+          >
+            <h2 className="text-subheading font-semibold text-indigo-700">
+              {t("tutor_management")}
+            </h2>
+            <p className="text-body-md text-gray-600">{t("manage_tutors")}</p>
+          </Link>
+          <Link
+            to="/admin/knowledge-points"
             className="p-6 bg-indigo-50 rounded-lg text-center hover:bg-indigo-100 transition-colors"
           >
             <h2 className="text-subheading font-semibold text-indigo-700">
@@ -70,7 +85,7 @@ function AdminDashboard() {
             </p>
           </Link>
           <Link
-            to="/classroom-management"
+            to="/admin/classroom-management"
             className="p-6 bg-indigo-50 rounded-lg text-center hover:bg-indigo-100 transition-colors"
           >
             <h2 className="text-subheading font-semibold text-indigo-700">
@@ -80,10 +95,20 @@ function AdminDashboard() {
               {t("manage_classrooms")}
             </p>
           </Link>
+          <Link
+            to="/admin/courses"
+            className="p-6 bg-indigo-50 rounded-lg text-center hover:bg-indigo-100 transition-colors"
+          >
+            <h2 className="text-subheading font-semibold text-indigo-700">
+              {t("course_management")}
+            </h2>
+            <p className="text-body-md text-gray-600">{t("manage_courses")}</p>
+          </Link>
         </div>
+        
       </div>
     </div>
   );
-}
+};
 
 export default AdminDashboard;

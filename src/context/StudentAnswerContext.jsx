@@ -23,7 +23,7 @@ export function StudentAnswerProvider({ children }) {
         questionIndex,
         answer,
         isCorrect,
-        timestamp: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
       });
       setAnswers([...answers, { questionIndex, answer, isCorrect }]);
       showToast("Answer submitted successfully!", "success");

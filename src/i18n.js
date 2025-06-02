@@ -30,6 +30,7 @@ i18next
           invalid_credentials: "Invalid email or password",
           login: "Login",
           invalid_credentials_or_role: "Invalid email, password, or role",
+          user_management: "User Management",
         },
       },
       zh: {

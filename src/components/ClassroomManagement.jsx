@@ -1,5 +1,5 @@
-// src/components/ClassroomManagement.jsx
-import { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   getUsers,
@@ -26,7 +26,6 @@ const ClassroomManagement = () => {
   const [error, setError] = useState(null);
   const [selectedClassroomId, setSelectedClassroomId] = useState(null);
 
-  // Fetch classrooms on mount
   useEffect(() => {
     const fetchClassrooms = async () => {
       setLoading(true);
@@ -43,7 +42,6 @@ const ClassroomManagement = () => {
     fetchClassrooms();
   }, [t]);
 
-  // Fetch students and tutors when a classroom is selected
   useEffect(() => {
     const fetchUsers = async () => {
       if (!selectedClassroomId) return;
@@ -112,6 +110,12 @@ const ClassroomManagement = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8 flex items-center justify-center">
       <div className="max-w-2xl w-full bg-white rounded-xl shadow-md p-6 sm:p-8">
+        <Link
+          to="/admin-dashboard"
+          className="text-indigo-600 hover:text-indigo-800 font-medium text-body-md mb-4 inline-block"
+        >
+          {t("back_to_dashboard")}
+        </Link>
         <h1 className="text-heading-lg font-extrabold text-center text-gray-800 mb-6">
           {t("classroom_management")}
         </h1>

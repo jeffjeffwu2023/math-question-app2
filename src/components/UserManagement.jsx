@@ -1,5 +1,5 @@
-// src/components/UserManagement.jsx
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { getUsers, addUser } from "../services/api";
 import { showToast } from "../utils/toast";
 import { useTranslation } from "react-i18next";
@@ -14,7 +14,7 @@ const UserManagement = () => {
     name: "",
     email: "",
     password: "",
-    role: "parent",
+    role: "student",
     language: "en",
     tutorId: null,
     studentIds: [],
@@ -26,17 +26,18 @@ const UserManagement = () => {
     const fetchUsers = async () => {
       setLoading(true);
       try {
-        const response = await getUsers({ role: "student" }); // Fetch students only
+        const response = await getUsers({ role: "student" });
         setUsers(response.data);
       } catch (error) {
-        showToast("Failed to fetch users.", "error");
+        showToast(t("failed_to_fetch_users"), "error");
         console.error("Error fetching users:", error);
+        setError(t("failed_to_fetch_users"));
       } finally {
         setLoading(false);
       }
     };
     fetchUsers();
-  }, []);
+  }, [t]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -50,12 +51,11 @@ const UserManagement = () => {
       name: formData.name,
       email: formData.email,
       password: formData.password,
-      role: formData.role,
+      role: "student",
       language: formData.language,
-      studentIds: formData.studentIds || [],
+      studentIds: [],
       classroomIds: formData.classroomIds || [],
-      ...(formData.role === "student" &&
-        formData.tutorId && { tutorId: formData.tutorId }),
+      tutorId: formData.tutorId || null,
     };
     try {
       await addUser(userData);
@@ -65,147 +65,108 @@ const UserManagement = () => {
         name: "",
         email: "",
         password: "",
-        role: "parent",
+        role: "student",
         language: "en",
         tutorId: null,
         studentIds: [],
         classroomIds: [],
       });
-      // Refresh users
       const response = await getUsers({ role: "student" });
       setUsers(response.data);
     } catch (error) {
       const errorMsg = error.response?.data?.detail || t("failed_to_add_user");
-      setError(errorMsg);
       showToast(errorMsg, "error");
     }
   };
 
+  if (error) return <div>{error}</div>;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8 flex items-center justify-center">
-      <div className="max-w-2xl w-full bg-white rounded-xl shadow-md p-6 sm:p-8">
-        <h1 className="text-heading-lg font-extrabold text-center text-gray-800 mb-6">
-          {t("user_management")}
-        </h1>
-        {error && <p className="text-red-500 mb-4 text-center">{error}</p>}
+      <div className="max-w-3xl w-full bg-white rounded-xl shadow-md p-6 sm:p-8">
+        <Link
+          to="/admin-dashboard"
+          className="text-indigo-600 hover:text-indigo-800 font-medium text-body-md mb-4 inline-block"
+        >
+          {t("back_to_dashboard")}
+        </Link>
+        <h2 className="text-heading-lg mb-6">{t("student_management")}</h2>
         {loading ? (
           <p>Loading...</p>
         ) : (
-          <div>
-            <h2 className="text-subheading font-semibold text-gray-800 mb-4">
-              Students
-            </h2>
-            {users.length === 0 ? (
-              <p>No students found.</p>
-            ) : (
-              <ul>
-                {users.map((user) => (
-                  <li key={user.id}>
-                    {user.name} ({user.email})
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
-        <form onSubmit={handleAddUser} className="space-y-6">
-          <div>
-            <label
-              htmlFor="name"
-              className="block text-body-md font-medium text-gray-700"
-            >
-              {t("name")}
-            </label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-              className="mt-1 w-full p-3 border border-gray-300 rounded-md"
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-body-md font-medium text-gray-700"
-            >
-              {t("email")}
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              className="mt-1 w-full p-3 border border-gray-300 rounded-md"
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-body-md font-medium text-gray-700"
-            >
-              {t("password")}
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              className="mt-1 w-full p-3 border border-gray-300 rounded-md"
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="role"
-              className="block text-body-md font-medium text-gray-700"
-            >
-              {t("role")}
-            </label>
-            <select
-              id="role"
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              className="mt-1 w-full p-3 border border-gray-300 rounded-md"
-            >
-              <option value="parent">{t("parent")}</option>
-              <option value="student">{t("student")}</option>
-              <option value="admin">{t("admin")}</option>
-              <option value="tutor">{t("tutor")}</option>
-              <option value="manager">{t("manager")}</option>
-            </select>
-          </div>
-          {formData.role === "student" && (
-            <div>
-              <label
-                htmlFor="tutorId"
-                className="block text-body-md font-medium text-gray-700"
-              >
-                {t("tutor_id")}
-              </label>
-              <input
-                type="text"
-                id="tutorId"
-                name="tutorId"
-                value={formData.tutorId || ""}
-                onChange={handleChange}
-                className="mt-1 w-full p-3 border border-gray-300 rounded-md"
-              />
+          <>
+            <div className="mb-8">
+              <h3 className="text-heading-md mb-4">{t("add_student")}</h3>
+              <form onSubmit={handleAddUser} className="space-y-4">
+                <div>
+                  <label className="block text-body-md">{t("name")}</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    className="border rounded p-2 w-full"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-body-md">{t("email")}</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="border rounded p-2 w-full"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-body-md">{t("password")}</label>
+                  <input
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="border rounded p-2 w-full"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-body-md">{t("language")}</label>
+                  <select
+                    name="language"
+                    value={formData.language}
+                    onChange={handleChange}
+                    className="border rounded p-2 w-full"
+                  >
+                    <option value="en">English</option>
+                    <option value="zh">Chinese</option>
+                  </select>
+                </div>
+                <button
+                  type="submit"
+                  className="bg-indigo-500 text-white px-4 py-2 rounded"
+                >
+                  {t("add_student")}
+                </button>
+              </form>
             </div>
-          )}
-          <button
-            type="submit"
-            className="w-full py-3 bg-indigo-600 text-white rounded-md"
-          >
-            {t("add_user")}
-          </button>
-        </form>
+            <div>
+              <h3 className="text-heading-md mb-4">{t("student_list")}</h3>
+              {users.length === 0 ? (
+                <p>{t("no_students_found")}</p>
+              ) : (
+                <ul className="space-y-2">
+                  {users.map((user) => (
+                    <li key={user.id} className="border p-4 rounded">
+                      {user.name} ({user.email})
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

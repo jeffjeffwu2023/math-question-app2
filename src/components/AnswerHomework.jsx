@@ -1,4 +1,3 @@
-// src/components/AnswerHomework.jsx
 import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -6,8 +5,11 @@ import { useQuestions } from "../context/QuestionContext";
 import { getAssignments, submitAssignment } from "../services/api";
 import { showToast } from "../utils/toast";
 import { ClipLoader } from "react-spinners";
+import { useTranslation } from "react-i18next";
+import QuestionPreview from "./QuestionPreview";
 
 function AnswerHomework() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { questions } = useQuestions();
   const { assignmentId } = useParams();
@@ -24,24 +26,25 @@ function AnswerHomework() {
         const response = await getAssignments(user.id);
         const assignmentData = response.data.find((a) => a.id === assignmentId);
         if (!assignmentData || assignmentData.studentId !== user.id) {
-          throw new Error("Assignment not found or unauthorized");
+          throw new Error(t("assignment_not_found"));
         }
         setAssignment(assignmentData);
+        console.log("Fetched assignment:", assignmentData);
       } catch (err) {
         console.error("Error fetching assignment:", err);
-        setError("Failed to load assignment.");
-        showToast("Failed to load assignment.", "error");
+        setError(t("failed_to_load_assignment"));
+        showToast(t("failed_to_load_assignment"), "error");
       } finally {
         setLoading(false);
       }
     };
     fetchAssignment();
-  }, [assignmentId, user.id]);
+  }, [assignmentId, user.id, t]);
 
-  const handleAnswerChange = (questionIndex, value) => {
+  const handleAnswerChange = (questionId, value) => {
     setAnswers((prev) => ({
       ...prev,
-      [questionIndex]: value,
+      [questionId]: value,
     }));
   };
 
@@ -51,10 +54,10 @@ function AnswerHomework() {
     try {
       await submitAssignment(assignmentId);
       setAssignment((prev) => ({ ...prev, submitted: true }));
-      showToast("Assignment submitted successfully!", "success");
+      showToast(t("assignment_submitted_successfully"), "success");
     } catch (err) {
       console.error("Error submitting assignment:", err);
-      showToast("Failed to submit assignment.", "error");
+      showToast(t("failed_to_submit_assignment"), "error");
     } finally {
       setSubmitting(false);
     }
@@ -65,7 +68,7 @@ function AnswerHomework() {
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8">
         <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6 sm:p-8 transition-all duration-300">
           <p className="text-red-600 text-body-md text-center">
-            Please log in as a student to view this page.
+            {t("please_login_student")}
           </p>
         </div>
       </div>
@@ -74,17 +77,17 @@ function AnswerHomework() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8">
-      <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6 sm:p-8 transition-all duration-300">
+      <div className="preview max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6 sm:p-8 transition-all duration-300">
         <h1 className="text-heading-lg sm:text-heading-lg font-extrabold text-center text-gray-800 mb-6 sm:mb-8 tracking-tight">
-          Answer Homework
+          {t("answer_homework")}
         </h1>
         <div className="mb-6 text-center">
           <Link
             to="/student-dashboard"
             className="text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200 text-body-md"
-            aria-label="Back to Dashboard"
+            aria-label={t("back_to_dashboard")}
           >
-            Back to Dashboard
+            {t("back_to_dashboard")}
           </Link>
         </div>
         {loading ? (
@@ -97,60 +100,67 @@ function AnswerHomework() {
           <div className="space-y-6">
             <div>
               <h2 className="text-subheading font-semibold text-gray-800 mb-2">
-                Assignment #{assignment.id}
+                {t("assignment")} #{assignment.id}
               </h2>
               <p className="text-body-md text-gray-600">
-                <span className="font-medium">Status:</span>{" "}
-                {assignment.submitted ? "Submitted" : "Not Submitted"}
+                <span className="font-medium">{t("status")}:</span>{" "}
+                {assignment.submitted ? t("submitted") : t("not_submitted")}
               </p>
             </div>
             {assignment.submitted ? (
               <p className="text-gray-600 text-body-md text-center">
-                This assignment has already been submitted.
+                {t("assignment_already_submitted")}
               </p>
             ) : (
               <>
                 <h3 className="text-subheading font-semibold text-gray-800 mb-4">
-                  Questions
+                  {t("questions")}
                 </h3>
-                {assignment.questionIndices.map((index) => {
-                  const question = questions.find((q) => q.index === index);
-                  return question ? (
-                    <div
-                      key={index}
-                      className="p-4 bg-gray-50 rounded-lg shadow-sm border border-gray-200 space-y-2"
-                    >
-                      <p className="text-body-md font-medium text-gray-800">
-                        {question.title} (Category: {question.category},
-                        Difficulty: {question.difficulty})
+                {assignment.questionIds && assignment.questionIds.length > 0 ? (
+                  assignment.questionIds.map((questionId) => {
+                    const question = questions.find((q) => q.id === questionId);
+                    return question ? (
+                      <div
+                        key={questionId}
+                        className="p-4 bg-gray-50 rounded-lg shadow-sm border border-gray-200 space-y-2"
+                      >
+                        <p className="text-body-md font-medium text-gray-800">
+                          {question.title} ({t("category")}: {question.category}
+                          , {t("difficulty")}: {question.difficulty})
+                        </p>
+                        <QuestionPreview content={question.content} />
+                        <input
+                          type="text"
+                          value={answers[questionId] || ""}
+                          onChange={(e) =>
+                            handleAnswerChange(questionId, e.target.value)
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+                          placeholder={t("enter_your_answer")}
+                          disabled={submitting}
+                        />
+                      </div>
+                    ) : (
+                      <p
+                        key={questionId}
+                        className="text-gray-600 text-body-md"
+                      >
+                        {t("question_not_found", { id: questionId })}
                       </p>
-                      <p className="text-body-md text-gray-600">
-                        {question.content}
-                      </p>
-                      <input
-                        type="text"
-                        value={answers[index] || ""}
-                        onChange={(e) =>
-                          handleAnswerChange(index, e.target.value)
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
-                        placeholder="Enter your answer"
-                        disabled={submitting}
-                      />
-                    </div>
-                  ) : (
-                    <p key={index} className="text-gray-600 text-body-md">
-                      Question {index} not found.
-                    </p>
-                  );
-                })}
+                    );
+                  })
+                ) : (
+                  <p className="text-gray-600 text-body-md text-center">
+                    {t("no_questions_in_assignment")}
+                  </p>
+                )}
                 <div className="mt-6 text-center">
                   <button
                     onClick={handleSubmit}
                     className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-300 focus:ring-opacity-50 transition-all duration-200 text-body-md disabled:bg-indigo-400"
                     disabled={submitting || assignment.submitted}
                   >
-                    {submitting ? "Submitting..." : "Submit Assignment"}
+                    {submitting ? t("submitting") : t("submit_assignment")}
                   </button>
                 </div>
               </>
@@ -158,7 +168,7 @@ function AnswerHomework() {
           </div>
         ) : (
           <p className="text-gray-600 text-body-md text-center">
-            Assignment not found.
+            {t("assignment_not_found")}
           </p>
         )}
       </div>

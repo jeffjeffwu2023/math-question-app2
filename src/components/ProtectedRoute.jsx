@@ -8,7 +8,7 @@ function ProtectedRoute({ children, allowedRole }) {
   if (!user) {
     return (
       <Navigate
-        to={allowedRole.includes("student") ? "/student-login" : "/admin-login"}
+        to={allowedRole.includes("student") ? "/login" : "/login"}
       />
     );
   }

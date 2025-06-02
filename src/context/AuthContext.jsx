@@ -56,7 +56,7 @@ export function AuthProvider({ children }) {
     setUser(null);
     delete API.defaults.headers.common["Authorization"];
     showToast("Logged out successfully.", "success");
-    navigate("/");
+    navigate("/login");
   };
 
   return (

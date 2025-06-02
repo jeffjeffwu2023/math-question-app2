@@ -1,11 +1,12 @@
-// src/App.jsx
 import { Routes, Route } from "react-router-dom";
 import { I18nextProvider } from "react-i18next";
 import i18n from "./i18n";
-import Login from "./components/Login"; // New unified login
+import Login from "./components/Login";
 import AdminDashboard from "./components/AdminDashboard";
 import AddQuestion from "./components/AddQuestion";
 import UserManagement from "./components/UserManagement";
+import TutorManagement from "./components/TutorManagement";
+import CourseManagement from "./components/CourseManagement";
 import ProtectedRoute from "./components/ProtectedRoute";
 import StudentDashboard from "./components/StudentDashboard";
 import AssignHomework from "./components/AssignHomework";
@@ -25,7 +26,7 @@ function App() {
     <I18nextProvider i18n={i18n}>
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<Login />} /> {/* Unified login */}
+        <Route path="/login" element={<Login />} />
         <Route
           path="/student-dashboard"
           element={
@@ -59,7 +60,7 @@ function App() {
           }
         />
         <Route
-          path="/add-question"
+          path="/admin/add-question"
           element={
             <ProtectedRoute allowedRole="admin">
               <AddQuestion />
@@ -67,7 +68,7 @@ function App() {
           }
         />
         <Route
-          path="/user-management"
+          path="/admin/user-management"
           element={
             <ProtectedRoute allowedRole="admin">
               <UserManagement />
@@ -75,7 +76,23 @@ function App() {
           }
         />
         <Route
-          path="/knowledge-points"
+          path="/admin/tutor-management"
+          element={
+            <ProtectedRoute allowedRole="admin">
+              <TutorManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/courses"
+          element={
+            <ProtectedRoute allowedRole="admin">
+              <CourseManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/knowledge-points"
           element={
             <ProtectedRoute allowedRole="admin">
               <KnowledgePointManagement />
@@ -83,7 +100,7 @@ function App() {
           }
         />
         <Route
-          path="/classroom-management"
+          path="/admin/classroom-management"
           element={
             <ProtectedRoute allowedRole="admin">
               <ClassroomManagement />
@@ -91,7 +108,7 @@ function App() {
           }
         />
         <Route
-          path="/manager-management"
+          path="/admin/manager-management"
           element={
             <ProtectedRoute allowedRole="admin">
               <ManagerManagement />
@@ -99,7 +116,7 @@ function App() {
           }
         />
         <Route
-          path="/classroom-chart"
+          path="/admin/classroom-chart"
           element={
             <ProtectedRoute allowedRole="admin">
               <ClassroomChart />
