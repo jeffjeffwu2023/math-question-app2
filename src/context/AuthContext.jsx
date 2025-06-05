@@ -1,75 +1,74 @@
-// src/context/AuthContext.jsx
 import { createContext, useContext, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { API } from "../services/api";
+import { useTranslation } from "react-i18next";
+import axios from "axios";
 import { showToast } from "../utils/toast";
 
 const AuthContext = createContext();
 
-export function AuthProvider({ children }) {
+export const AuthProvider = ({ children }) => {
+  const { t } = useTranslation();
   const [user, setUser] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem("token"));
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      setUser(JSON.parse(localStorage.getItem("user") || "{}"));
-    }
-    setLoading(false);
+    const verifyToken = async () => {
+      const storedToken = localStorage.getItem("token");
+      if (storedToken) {
+        try {
+          const response = await axios.get(
+            `/api/auth/current-user`,
+            { headers: { Authorization: `Bearer ${storedToken}` } }
+          );
+          setUser(response.data);
+          setToken(storedToken);
+        } catch (error) {
+          console.error("Token verification failed:", error);
+          localStorage.removeItem("token");
+          setToken(null);
+        }
+      }
+      setLoading(false);
+    };
+    verifyToken();
   }, []);
 
-  const loginUser = async (email, password) => {
+  const login = async (email, password) => {
     try {
-      const response = await API.post("/api/auth/login/", { email, password });
-      const { access_token, user } = response.data;
-
+      const response = await axios.post(
+        `/api/auth/login`,
+        { email, password }
+      );
       console.log("Login response:", response.data);
-
-      localStorage.setItem("token", access_token);
-      localStorage.setItem("user", JSON.stringify(user));
-      setUser(user);
-      API.defaults.headers.common["Authorization"] = `Bearer ${access_token}`;
-      showToast("Login successful!", "success");
-
-      // Redirect based on role
-      if (user.role === "student") {
-        navigate("/student-dashboard");
-      } else if (user.role === "tutor") {
-        navigate("/tutor-dashboard");
-      } else if (user.role === "admin") {
-        navigate("/admin-dashboard");
-      } else {
-        throw new Error("Invalid role");
-      }
-      return user; // Return user for frontend use
+      setUser(response.data.user);
+      setToken(response.data.access_token);
+      localStorage.setItem("token", response.data.access_token);
+      showToast(t("Login successful"), "success");
+      return response.data;
     } catch (error) {
-      showToast("Login failed. Check credentials or role.", "error");
-      console.error("Login error:", error);
-      return false;
+      showToast(t("Login failed"), "error");
+      throw error;
     }
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
     setUser(null);
-    delete API.defaults.headers.common["Authorization"];
-    showToast("Logged out successfully.", "success");
-    navigate("/login");
+    setToken(null);
+    localStorage.removeItem("token");
+    showToast(t("Logged out"), "success");
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login: loginUser, logout }}>
+    <AuthContext.Provider value={{ user, token, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
-export function useAuth() {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
-}
+};

@@ -26,7 +26,7 @@ const KnowledgePointManagement = () => {
       setLoading(true);
       try {
         const response = await axios.get(
-          "http://localhost:8000/api/knowledge-points",
+          "/api/knowledge-points",
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -64,7 +64,7 @@ const KnowledgePointManagement = () => {
     try {
       if (editId) {
         const response = await axios.put(
-          `http://localhost:8000/api/knowledge-points/${editId}`,
+          `/api/knowledge-points/${editId}`,
           formData,
           {
             headers: {
@@ -80,7 +80,7 @@ const KnowledgePointManagement = () => {
         });
       } else {
         const response = await axios.post(
-          "http://localhost:8000/api/knowledge-points",
+          "/api/knowledge-points",
           formData,
           {
             headers: {
@@ -128,7 +128,7 @@ const KnowledgePointManagement = () => {
     if (!window.confirm(t("confirm_delete_knowledge_point"))) return;
     setLoading(true);
     try {
-      await axios.delete(`http://localhost:8000/api/knowledge-points/${id}`, {
+      await axios.delete(`/api/knowledge-points/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       setKnowledgePoints((prev) => prev.filter((kp) => kp._id !== id));

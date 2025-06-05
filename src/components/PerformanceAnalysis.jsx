@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
   getAnswers,
-  getAssignments,
+  //getAssignments,
   analyzeStudent,
   performanceMetrics,
   timeSpent,
@@ -41,19 +41,17 @@ function PerformanceAnalysis() {
 
         const metricsResponse = await performanceMetrics({ answers });
         console.log("Performance metrics:", metricsResponse.data);
-        const assignmentsResponse = await getAssignments(user.id);
-        console.log("Fetched assignments:", assignmentsResponse.data);
+        //const assignmentsResponse = await getAssignments(user.id);
+        //console.log("Fetched assignments:", assignmentsResponse.data);
         const timeSpentResponse = await timeSpent({ answers });
         console.log("Time spent:", timeSpentResponse.data);
 
-
-        
         const studentData = {
           studentId: user.id,
           name: user.name,
           answers,
           ...metricsResponse.data,
-          assignments: assignmentsResponse.data,
+          //assignments: assignmentsResponse.data,
           timeSpent: timeSpentResponse.data,
         };
 

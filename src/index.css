@@ -4,7 +4,8 @@
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
 }
 
 .ql-toolbar.ql-snow {
@@ -41,15 +42,20 @@ math-field {
   vertical-align: middle;
   line-height: normal;
 }
+
 .preview math-field * {
   display: inline-block;
   vertical-align: middle;
   line-height: normal;
 }
 
+.preview math-field .ML__menu-toggle {
+  display: none;
+}
+
 /* Add icon for mathlive button */
 .ql-toolbar .ql-mathlive::before {
-  content: '∑';
+  content: "∑";
   font-size: 16px;
   transform: translateY(-2px);
   display: inline-block;
@@ -57,7 +63,7 @@ math-field {
 
 /* Add icon for fraction button */
 .ql-toolbar .ql-fraction::before {
-  content: '½';
+  content: "½";
   font-size: 16px;
   transform: translateY(-2px);
   display: inline-block;
@@ -65,7 +71,7 @@ math-field {
 
 /* Add icon for exponent button */
 .ql-toolbar .ql-exponent::before {
-  content: 'x²';
+  content: "x²";
   font-size: 16px;
   transform: translateY(-2px);
   display: inline-block;
@@ -73,7 +79,7 @@ math-field {
 
 /* Add icon for square root button */
 .ql-toolbar .ql-sqrt::before {
-  content: '√';
+  content: "√";
   font-size: 16px;
   transform: translateY(-2px);
   display: inline-block;

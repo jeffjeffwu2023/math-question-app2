@@ -24,17 +24,18 @@ const Login = () => {
     console.log("Attempting login with credentials:", credentials);
     try {
       // Send email and password, let backend handle role check
-      const user = await login(credentials.email, credentials.password);
+      const response = await login(credentials.email, credentials.password);
       // Redirect based on role (handled by AuthContext or backend response)
-      if (user.role === "student") {
+      console.log("Login successful, response data:", response);
+      if (response.user && response.user.role === "student") {
         navigate("/student-dashboard");
-      } else if (user.role === "tutor") {
+      } else if (response.user && response.user.role === "tutor") {
         navigate("/tutor-dashboard");
-      } else if (user.role === "admin") {
+      } else if (response.user && response.user.role === "admin") {
         navigate("/admin-dashboard");
       } else {
         throw new Error("Invalid role");
-      }
+      } 
     } catch (error) {
       console.error("Login error:", error);
       setError(t("invalid_credentials_or_role"));

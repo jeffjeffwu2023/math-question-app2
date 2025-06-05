@@ -1,44 +1,80 @@
-// src/context/KnowledgePointContext.jsx
 import { createContext, useContext, useState, useEffect } from "react";
-import { API, getKnowledgePoints } from "../services/api";
-import { toast } from "react-toastify";
+import axios from "axios";
+import { showToast } from "../utils/toast";
+import { useTranslation } from "react-i18next";
+import { useAuth } from "./AuthContext";
 
 const KnowledgePointContext = createContext();
 
-export function KnowledgePointProvider({ children }) {
+export const KnowledgePointProvider = ({ children }) => {
+  const { t } = useTranslation();
+  const { user, token } = useAuth();
   const [knowledgePoints, setKnowledgePoints] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
+    console.log(
+      "KnowledgePointContext useEffect: user:",
+      !!user,
+      "token:",
+      !!token
+    );
     const fetchKnowledgePoints = async () => {
-      setLoading(true);
+      if (!user || !token) {
+        console.log("Skipping fetch: user or token missing");
+        return;
+      }
       try {
-        const response = await getKnowledgePoints({ version: "2025.01" });
+        setLoading(true);
+        setError(null); // Clear previous error
+        const response = await axios.get(
+          "/api/knowledge-points",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         console.log("Fetched knowledge points:", response.data);
+        console.log("Sample knowledge point:", response.data[0]);
+        if (!Array.isArray(response.data)) {
+          throw new Error(
+            `Invalid response format: Expected an array, got ${typeof response.data}`
+          );
+        }
         setKnowledgePoints(response.data);
-        localStorage.setItem("knowledgePoints", JSON.stringify(response.data));
         setLoading(false);
       } catch (error) {
         console.error("Failed to fetch knowledge points:", error);
-        toast.error("Failed to load knowledge points", {
-          toastId: "kp-load-error",
-        });
-        // Load cached data if offline
-        const cachedPoints = localStorage.getItem("knowledgePoints");
-        if (cachedPoints && !navigator.onLine) {
-          setKnowledgePoints(JSON.parse(cachedPoints));
-        }
+        setError(error.message);
+        showToast(t("Failed to load knowledge points"), "error");
         setLoading(false);
       }
     };
     fetchKnowledgePoints();
-  }, []);
+  }, [t, user, token]);
+
+  console.log(
+    "KnowledgePointContext state: loading:",
+    loading,
+    "error:",
+    error,
+    "knowledgePoints:",
+    knowledgePoints.length
+  );
 
   return (
-    <KnowledgePointContext.Provider value={{ knowledgePoints, loading }}>
+    <KnowledgePointContext.Provider value={{ knowledgePoints, loading, error }}>
       {children}
     </KnowledgePointContext.Provider>
   );
-}
+};
 
-export const useKnowledgePoint = () => useContext(KnowledgePointContext);
+export const useKnowledgePoints = () => {
+  const context = useContext(KnowledgePointContext);
+  if (!context) {
+    throw new Error(
+      "useKnowledgePoints must be used within a KnowledgePointProvider"
+    );
+  }
+  return context;
+};
