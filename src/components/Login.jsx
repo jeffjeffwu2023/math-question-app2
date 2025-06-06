@@ -1,7 +1,6 @@
-// src/components/Login.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext"; // Remove unused login import
 import { useTranslation } from "react-i18next";
 
 const Login = () => {
@@ -23,19 +22,26 @@ const Login = () => {
     e.preventDefault();
     console.log("Attempting login with credentials:", credentials);
     try {
-      // Send email and password, let backend handle role check
+      // Await the login call to get the resolved response
       const response = await login(credentials.email, credentials.password);
-      // Redirect based on role (handled by AuthContext or backend response)
       console.log("Login successful, response data:", response);
-      if (response.user && response.user.role === "student") {
+
+      // The login function in AuthContext already stores token and user
+      const { user } = response;
+      if (!user) {
+        throw new Error("Invalid login response: missing user data");
+      }
+
+      // Redirect based on role
+      if (user.role === "student") {
         navigate("/student-dashboard");
-      } else if (response.user && response.user.role === "tutor") {
+      } else if (user.role === "tutor") {
         navigate("/tutor-dashboard");
-      } else if (response.user && response.user.role === "admin") {
+      } else if (user.role === "admin") {
         navigate("/admin-dashboard");
       } else {
         throw new Error("Invalid role");
-      } 
+      }
     } catch (error) {
       console.error("Login error:", error);
       setError(t("invalid_credentials_or_role"));

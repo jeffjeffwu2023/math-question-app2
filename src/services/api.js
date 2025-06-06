@@ -1,21 +1,47 @@
 import axios from "axios";
 
 const API = axios.create({
-  //baseURL: "http://localhost:8000",
+  baseURL: "http://localhost:8000", // Added baseURL
   timeout: 30000,
 });
 
 API.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
+  let token = localStorage.getItem("token");
+  if (!token) {
+    token = localStorage.getItem("authToken"); // Fallback key
+  }
+  console.log("Token being used for request:", token);
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  } else {
+    console.warn("No token found in localStorage");
   }
   return config;
+}, (error) => {
+  console.error("Request interceptor error:", error);
+  return Promise.reject(error);
 });
 
+API.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error("API response error:", error.response?.data || error.message);
+    if (error.response?.status === 401) {
+      console.warn("Authentication failed, redirecting to login");
+      localStorage.removeItem("token");
+      localStorage.removeItem("authToken");
+      window.location.href = "/login";
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Auth endpoints
-export const login = (id, password) =>
-  API.post("/api/auth/login/", { id, password });
+export const login = (email, password) => {
+  console.log("Logging in with email:", email);
+  console.log("Logging in with Password:", password);
+  return API.post("/api/auth/login/", { email, password }); // Added return
+}
 
 // User endpoints
 export const getUsers = (filters = {}) =>
@@ -59,9 +85,12 @@ export const saveAnswer = (questionId, answer, isCorrect) =>
 export const getAnswers = (studentId) =>
   API.get(`/api/answers/${studentId ? `?student_id=${studentId}` : ""}`);
 
+export const performanceMetrics = (data) =>
+  API.post("/api/students/performance-metrics/", data);
+export const timeSpent = (data) =>
+  API.post("/api/students/time-spent/", data);
 
 // AI APIs
-//export const evaluateAnswer = (prompt) => API.post("/api/ai/grok/", { prompt });
 export const analyzeStudent = (
   studentData,
   targetAudience = "student",
@@ -70,16 +99,6 @@ export const analyzeStudent = (
   API.post("/api/ai/analyze-student/", studentData, {
     params: { target_audience: targetAudience, language },
   });
-
-
-  export const performanceMetrics = (data) =>
-    API.post("/api/students/performance-metrics/", data);
-  export const timeSpent = (data) =>
-    API.post("/api/students/time-spent/", data);
-
-// Performance endpoints
-//export const analyzeStudent = (studentId) =>
-//  API.get(`/api/performance/${studentId}/`);
 
 // Classroom endpoints
 export const getClassrooms = () => API.get("/api/classrooms/");
@@ -101,6 +120,9 @@ export const createCourse = (course) => API.post("/api/courses/", course);
 export const updateCourse = (id, course) =>
   API.put(`/api/courses/${id}/`, course);
 export const deleteCourse = (id) => API.delete(`/api/courses/${id}/`);
+
+// Verify Answer
+export const verifyAnswer = (testAnswer) => API.post("/api/verify-answer/", testAnswer);
 
 export { API };
 export default API;
