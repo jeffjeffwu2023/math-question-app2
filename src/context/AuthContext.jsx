@@ -14,21 +14,30 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const verifyToken = async () => {
       const storedToken = localStorage.getItem("token");
+      console.log("Verifying token on mount:", storedToken);
+      console.log("AuthContext: Initial loading state:", loading);
       if (storedToken) {
         try {
           const response = await axios.get(
-            `/api/auth/current-user`,
+            `http://localhost:8000/api/auth/current-user`,
             { headers: { Authorization: `Bearer ${storedToken}` } }
           );
+          console.log("Token verified, user:", response.data);
           setUser(response.data);
           setToken(storedToken);
         } catch (error) {
           console.error("Token verification failed:", error);
-          localStorage.removeItem("token");
-          setToken(null);
+          if (error.response?.status === 401) {
+            localStorage.removeItem("token");
+            setToken(null);
+            showToast(t("Session expired, please log in again"), "error");
+          }
         }
+      } else {
+        console.log("No token found in localStorage, skipping verification");
       }
       setLoading(false);
+      console.log("AuthContext: Loading state after verification:", loading);
     };
     verifyToken();
   }, []);
@@ -36,7 +45,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await axios.post(
-        `/api/auth/login`,
+        `http://localhost:8000/api/auth/login`,
         { email, password }
       );
       console.log("Login response:", response.data);
@@ -46,6 +55,7 @@ export const AuthProvider = ({ children }) => {
       showToast(t("Login successful"), "success");
       return response.data;
     } catch (error) {
+      console.error("Login error:", error);
       showToast(t("Login failed"), "error");
       throw error;
     }

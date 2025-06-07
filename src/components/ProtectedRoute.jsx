@@ -1,20 +1,23 @@
-// src/components/ProtectedRoute.jsx
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 
 function ProtectedRoute({ children, allowedRole }) {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+
+  console.log("ProtectedRoute: authLoading:", authLoading, "user:", !!user);
+
+  if (authLoading) {
+    return <div className="text-center p-4">Loading...</div>;
+  }
 
   if (!user) {
-    return (
-      <Navigate
-        to={allowedRole.includes("student") ? "/login" : "/login"}
-      />
-    );
+    console.log("ProtectedRoute: Redirecting to /login due to no user");
+    return <Navigate to="/login" replace />;
   }
 
   if (Array.isArray(allowedRole)) {
     if (!allowedRole.includes(user.role)) {
+      console.log("ProtectedRoute: Redirecting due to role mismatch", user.role, allowedRole);
       return (
         <Navigate
           to={
@@ -26,10 +29,12 @@ function ProtectedRoute({ children, allowedRole }) {
               ? "/parent-dashboard"
               : "/admin-dashboard"
           }
+          replace
         />
       );
     }
   } else if (user.role !== allowedRole) {
+    console.log("ProtectedRoute: Redirecting due to role mismatch", user.role, allowedRole);
     return (
       <Navigate
         to={
@@ -41,6 +46,7 @@ function ProtectedRoute({ children, allowedRole }) {
             ? "/parent-dashboard"
             : "/admin-dashboard"
         }
+        replace
       />
     );
   }

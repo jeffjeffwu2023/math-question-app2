@@ -7,11 +7,13 @@ import QuestionEditor from "./QuestionEditor";
 import QuestionPreview from "./QuestionPreview";
 import { useTranslation } from "react-i18next";
 import { useKnowledgePoints } from "../context/KnowledgePointContext";
+import { useAuth } from "../context/AuthContext";
 import "mathlive";
 
 function AddQuestion() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const {
     knowledgePoints,
     loading: kpLoading,
@@ -33,15 +35,6 @@ function AddQuestion() {
 
   const correctAnswerMathFieldRef = useRef(null);
   const testAnswerMathFieldRef = useRef(null);
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    console.log("Stored token:", token);
-    if (!token) {
-      toast.error(t("Please log in to add a question"));
-      navigate("/login");
-    }
-  }, [navigate, t]);
 
   useEffect(() => {
     console.log("Current knowledgePointIds:", formData.knowledgePointIds);
@@ -67,7 +60,7 @@ function AddQuestion() {
         const latex = testMathField.value;
         console.log("Test Answer input:", latex);
         setTestAnswer(latex);
-        setAnswerFeedback(""); // Clear feedback when typing
+        setAnswerFeedback("");
       };
       testMathField.addEventListener("input", handleTestInput);
 
@@ -103,6 +96,12 @@ function AddQuestion() {
 
     setVerifyLoading(true);
     console.log("Starting verification, verifyLoading:", true);
+    console.log(
+      "Sending to backend - Correct Answer:",
+      formData.correctAnswer,
+      "Test Answer:",
+      testValue
+    );
 
     const timeoutPromise = new Promise((_, reject) =>
       setTimeout(() => reject(new Error("Verification timed out")), 5000)
@@ -114,11 +113,15 @@ function AddQuestion() {
       };
       console.log("API request config:", config);
 
-      const responsePromise = API.post("/api/verify-answer", {
-        questionType: formData.questionType,
-        correctAnswer: formData.correctAnswer,
-        testAnswer: testValue,
-      }, config);
+      const responsePromise = API.post(
+        "/api/verify-answer",
+        {
+          questionType: formData.questionType,
+          correctAnswer: formData.correctAnswer,
+          testAnswer: testValue,
+        },
+        config
+      );
 
       const response = await Promise.race([responsePromise, timeoutPromise]);
 
@@ -132,6 +135,7 @@ function AddQuestion() {
       );
     } catch (err) {
       console.error("Answer verification error:", err);
+      console.error("Error response data:", err.response?.data);
       setAnswerFeedback(
         t("Verification failed: ") + (err.response?.data?.detail || err.message)
       );
@@ -345,7 +349,9 @@ function AddQuestion() {
             {answerFeedback && (
               <p
                 className={`mt-2 text-sm ${
-                  answerFeedback.includes("correct") ? "text-green-600" : "text-red-600"
+                  answerFeedback.includes("correct")
+                    ? "text-green-600"
+                    : "text-red-600"
                 }`}
               >
                 {answerFeedback}
