@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:8000", // Added baseURL
+  baseURL: "http://localhost:8000",
   timeout: 30000,
 });
 
@@ -40,8 +40,8 @@ API.interceptors.response.use(
 export const login = (email, password) => {
   console.log("Logging in with email:", email);
   console.log("Logging in with Password:", password);
-  return API.post("/api/auth/login/", { email, password }); // Added return
-}
+  return API.post("/api/auth/login/", { email, password });
+};
 
 // User endpoints
 export const getUsers = (filters = {}) =>
@@ -122,7 +122,12 @@ export const updateCourse = (id, course) =>
 export const deleteCourse = (id) => API.delete(`/api/courses/${id}/`);
 
 // Verify Answer
-export const verifyAnswer = (testAnswer) => API.post("/api/verify-answer/", testAnswer);
+export const verifyAnswer = (testAnswer) =>
+  API.post("/api/verify-answer/", testAnswer);
+
+// Generate Question
+export const generateQuestion = (criteria) =>
+  API.post("/api/generate-question/", criteria);
 
 export { API };
 export default API;

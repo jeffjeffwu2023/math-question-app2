@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { API } from "../services/api";
+import { API, generateQuestion } from "../services/api";
 import KnowledgePointSelector from "./KnowledgePointSelector";
 import QuestionEditor from "./QuestionEditor";
 import QuestionPreview from "./QuestionPreview";
@@ -9,6 +9,17 @@ import { useTranslation } from "react-i18next";
 import { useKnowledgePoints } from "../context/KnowledgePointContext";
 import { useAuth } from "../context/AuthContext";
 import "mathlive";
+
+// Utility function to format numbers with fixed precision
+const formatNumber = (value) => {
+  try {
+    const num = parseFloat(value);
+    if (isNaN(num)) return value;
+    return num.toFixed(10).replace(/\.?0+$/, "");
+  } catch {
+    return value;
+  }
+};
 
 function AddQuestion() {
   const { t } = useTranslation();
@@ -23,6 +34,7 @@ function AddQuestion() {
     title: "",
     content: "",
     difficulty: "easy",
+    topic: "algebra",
     knowledgePointIds: [],
     correctAnswer: "",
     questionType: "numerical",
@@ -32,6 +44,7 @@ function AddQuestion() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [verifyLoading, setVerifyLoading] = useState(false);
+  const [saveToDb, setSaveToDb] = useState(false);
 
   const correctAnswerMathFieldRef = useRef(null);
   const testAnswerMathFieldRef = useRef(null);
@@ -51,14 +64,14 @@ function AddQuestion() {
     if (correctMathField && testMathField) {
       const handleCorrectInput = () => {
         const latex = correctMathField.value;
-        console.log("Correct Answer input:", latex);
+        console.log("Correct Answer input (LaTeX):", latex);
         setFormData((prev) => ({ ...prev, correctAnswer: latex }));
       };
       correctMathField.addEventListener("input", handleCorrectInput);
 
       const handleTestInput = () => {
         const latex = testMathField.value;
-        console.log("Test Answer input:", latex);
+        console.log("Test Answer input (LaTeX):", latex);
         setTestAnswer(latex);
         setAnswerFeedback("");
       };
@@ -127,11 +140,16 @@ function AddQuestion() {
 
       console.log("Verification response:", response.data);
 
+      const formattedExpected = formatNumber(response.data.expected);
+      const formattedSimplifiedTest = formatNumber(
+        response.data.simplifiedTest
+      );
+
       setAnswerFeedback(
         response.data.isCorrect
           ? t("Answer is correct")
           : t("Answer is incorrect") +
-              `: Expected ${response.data.expected}, got ${response.data.simplifiedTest}`
+              `: Expected ${formattedExpected}, got ${formattedSimplifiedTest}`
       );
     } catch (err) {
       console.error("Answer verification error:", err);
@@ -155,6 +173,39 @@ function AddQuestion() {
       return;
     }
     verifyAnswer(testAnswer);
+  };
+
+  const handleGenerateQuestion = async () => {
+    try {
+      setLoading(true);
+      const criteria = {
+        difficulty: formData.difficulty,
+        topic: formData.topic,
+        save_to_db: saveToDb,
+      };
+      const response = await generateQuestion(criteria);
+      console.log("Generated question response:", response.data);
+      setFormData((prev) => ({
+        ...prev,
+        title: response.data.title || "Generated Question",
+        content: response.data.question,
+        correctAnswer: response.data.correctAnswer,
+        passValidation: response.data.passValidation, // Update passValidation state
+      }));
+      if (saveToDb) {
+        toast.success(t("Question generated and saved to MongoDB"));
+      } else {
+        toast.success(t("Question generated successfully"));
+      }
+      if (!response.data.passValidation) {
+        toast.warning(t("Question generated but validation failed"));
+      }
+    } catch (err) {
+      console.error("Error generating question:", err);
+      toast.error(t("Failed to generate question"));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleChange = (e) => {
@@ -254,6 +305,29 @@ function AddQuestion() {
               {t("content")}
             </label>
             <QuestionEditor onContentChange={handleContentChange} />
+            <div className="mt-2 flex space-x-4">
+              <button
+                type="button"
+                onClick={handleGenerateQuestion}
+                disabled={loading}
+                className="flex-1 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {loading ? t("Generating...") : t("Generate Question")}
+              </button>
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={saveToDb}
+                  onChange={(e) => setSaveToDb(e.target.checked)}
+                />
+                <span>{t("save_to_mongodb")}</span>
+              </label>
+            </div>
+            {formData.passValidation === false && (
+              <p className="mt-2 text-yellow-600 text-sm">
+                {t("warning_validation_failed")}
+              </p>
+            )}
           </div>
           <div className="preview">
             <label className="block text-sm font-medium text-gray-700">
@@ -278,6 +352,25 @@ function AddQuestion() {
               <option value="easy">{t("easy")}</option>
               <option value="medium">{t("medium")}</option>
               <option value="hard">{t("hard")}</option>
+            </select>
+          </div>
+          <div>
+            <label
+              htmlFor="topic"
+              className="block text-sm font-medium text-gray-700"
+            >
+              {t("topic")}
+            </label>
+            <select
+              id="topic"
+              name="topic"
+              value={formData.topic}
+              onChange={handleChange}
+              className="mt-1 w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="algebra">{t("algebra")}</option>
+              <option value="geometry">{t("geometry")}</option>
+              <option value="calculus">{t("calculus")}</option>
             </select>
           </div>
           <div>
