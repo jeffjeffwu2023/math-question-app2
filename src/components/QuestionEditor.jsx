@@ -1,18 +1,24 @@
-// src/components/QuestionEditor.jsx
 import { useEffect, useRef } from "react";
 import Quill from "quill";
 import "quill/dist/quill.snow.css";
 import "mathlive/static.css";
-
-// Ensure MathLive is integrated with Quill (assuming quill.mathlive.js handles this)
 import "../quill.mathlive.js";
 
-const QuestionEditor = ({ onContentChange }) => {
+const QuestionEditor = ({ value, onContentChange }) => {
   const editorRef = useRef(null);
   const quillRef = useRef(null);
 
   useEffect(() => {
-    console.log("QuestionEditor useEffect running");
+    console.log("QuestionEditor useEffect running", { value });
+    console.log(
+      "QuestionEditor useEffect running:editorRef.current",
+      editorRef.current
+    );
+    console.log(
+      "QuestionEditor useEffect running:quillRef.current",
+      quillRef.current
+    );
+    console.log("QuestionEditor useEffect running", { value });
     if (editorRef.current && !quillRef.current) {
       console.log("Initializing Quill editor");
       quillRef.current = new Quill(editorRef.current, {
@@ -27,6 +33,17 @@ const QuestionEditor = ({ onContentChange }) => {
           mathlive: {},
         },
       });
+
+      // Set initial content if provided
+      if (value && value !== "<p><br></p>") {
+        quillRef.current.clipboard.dangerouslyPasteHTML(value);
+        console.log("Initial content set:", value);
+        const initialContent = quillRef.current.root.innerHTML;
+        if (initialContent && initialContent !== "<p><br></p>") {
+          console.log("Calling onContentChange with initial content");
+          onContentChange(initialContent);
+        }
+      }
 
       quillRef.current.on("text-change", (delta, oldDelta, source) => {
         console.log("text-change event fired", { delta, oldDelta, source });
@@ -56,13 +73,6 @@ const QuestionEditor = ({ onContentChange }) => {
         console.log("Editor content (cleaned):", cleanedContent);
         onContentChange(cleanedContent);
       });
-
-      const initialContent = quillRef.current.root.innerHTML;
-      console.log("Initial content:", initialContent);
-      if (initialContent && initialContent !== "<p><br></p>") {
-        console.log("Calling onContentChange with initial content");
-        onContentChange(initialContent);
-      }
 
       quillRef.current.focus();
       console.log("Quill editor focused");

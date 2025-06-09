@@ -1,4 +1,3 @@
-// src/components/QuestionPreview.jsx
 import { useEffect, useRef } from "react";
 import * as MathLive from "mathlive";
 import "mathlive/static.css";
@@ -28,6 +27,7 @@ const QuestionPreview = ({ content }) => {
         MathLive.renderMathInElement(previewRef.current, {
           readOnly: true,
           virtualKeyboardMode: "off",
+          renderToMathML: false, // Ensure rendering to HTML/MathML
         });
         console.log(
           "MathLive rendering complete for:",
@@ -39,6 +39,11 @@ const QuestionPreview = ({ content }) => {
 
       const mathFields = previewRef.current.querySelectorAll("math-field");
       console.log("Math fields found after rendering:", mathFields.length);
+      mathFields.forEach((mf) => {
+        if (mf.getAttribute("data-latex")) {
+          mf.innerHTML = mf.getAttribute("data-latex"); // Ensure content matches data-latex
+        }
+      });
       console.log("Final preview HTML:", previewRef.current.innerHTML);
     }
   }, [content]);

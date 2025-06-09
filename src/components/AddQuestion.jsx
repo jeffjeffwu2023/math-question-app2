@@ -21,6 +21,18 @@ const formatNumber = (value) => {
   }
 };
 
+// Utility to convert LaTeX to Quill-compatible HTML
+const latexToQuillHtml = (latex) => {
+  if (!latex) return "<p><br></p>";
+  // Replace LaTeX delimiters with math-field tags
+  const mathFieldLatex = latex.replace(
+    /\\\(([^()]+)\\\)/g,
+    (_, expr) =>
+      `<math-field data-latex="${expr}" contenteditable="false">${expr}</math-field>`
+  );
+  return `<p>${mathFieldLatex}</p>`;
+};
+
 function AddQuestion() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -38,6 +50,7 @@ function AddQuestion() {
     knowledgePointIds: [],
     correctAnswer: "",
     questionType: "numerical",
+    passValidation: false,
   });
   const [testAnswer, setTestAnswer] = useState("");
   const [answerFeedback, setAnswerFeedback] = useState("");
@@ -50,12 +63,8 @@ function AddQuestion() {
   const testAnswerMathFieldRef = useRef(null);
 
   useEffect(() => {
-    console.log("Current knowledgePointIds:", formData.knowledgePointIds);
-  }, [formData.knowledgePointIds]);
-
-  useEffect(() => {
-    console.log("Current content:", formData.content);
-  }, [formData.content]);
+    console.log("Current formData:", formData);
+  }, [formData]);
 
   useEffect(() => {
     const correctMathField = correctAnswerMathFieldRef.current;
@@ -185,12 +194,13 @@ function AddQuestion() {
       };
       const response = await generateQuestion(criteria);
       console.log("Generated question response:", response.data);
+      const quillContent = latexToQuillHtml(response.data.question || "");
       setFormData((prev) => ({
         ...prev,
         title: response.data.title || "Generated Question",
-        content: response.data.question,
-        correctAnswer: response.data.correctAnswer,
-        passValidation: response.data.passValidation, // Update passValidation state
+        content: quillContent, // Use converted HTML
+        correctAnswer: response.data.correctAnswer || "",
+        passValidation: response.data.passValidation || false,
       }));
       if (saveToDb) {
         toast.success(t("Question generated and saved to MongoDB"));
@@ -198,7 +208,7 @@ function AddQuestion() {
         toast.success(t("Question generated successfully"));
       }
       if (!response.data.passValidation) {
-        toast.warning(t("Question generated but validation failed"));
+        toast.warning(t("warning_validation_failed"));
       }
     } catch (err) {
       console.error("Error generating question:", err);
@@ -304,7 +314,10 @@ function AddQuestion() {
             >
               {t("content")}
             </label>
-            <QuestionEditor onContentChange={handleContentChange} />
+            <QuestionEditor
+              value={formData.content}
+              onContentChange={handleContentChange}
+            />
             <div className="mt-2 flex space-x-4">
               <button
                 type="button"
