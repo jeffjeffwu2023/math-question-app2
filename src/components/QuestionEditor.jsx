@@ -7,17 +7,9 @@ import "../quill.mathlive.js";
 const QuestionEditor = ({ value, onContentChange }) => {
   const editorRef = useRef(null);
   const quillRef = useRef(null);
+  const lastValueRef = useRef(value); // Track last value to prevent loops
 
   useEffect(() => {
-    console.log("QuestionEditor useEffect running", { value });
-    console.log(
-      "QuestionEditor useEffect running:editorRef.current",
-      editorRef.current
-    );
-    console.log(
-      "QuestionEditor useEffect running:quillRef.current",
-      quillRef.current
-    );
     console.log("QuestionEditor useEffect running", { value });
     if (editorRef.current && !quillRef.current) {
       console.log("Initializing Quill editor");
@@ -38,11 +30,6 @@ const QuestionEditor = ({ value, onContentChange }) => {
       if (value && value !== "<p><br></p>") {
         quillRef.current.clipboard.dangerouslyPasteHTML(value);
         console.log("Initial content set:", value);
-        const initialContent = quillRef.current.root.innerHTML;
-        if (initialContent && initialContent !== "<p><br></p>") {
-          console.log("Calling onContentChange with initial content");
-          onContentChange(initialContent);
-        }
       }
 
       quillRef.current.on("text-change", (delta, oldDelta, source) => {
@@ -50,18 +37,15 @@ const QuestionEditor = ({ value, onContentChange }) => {
         const content = quillRef.current.root.innerHTML;
         console.log("Editor content (raw):", content);
 
-        // Create a temporary DOM element to parse and clean the content
         const tempDiv = document.createElement("div");
         tempDiv.innerHTML = content;
 
-        // Process math-field elements
         const mathFields = tempDiv.querySelectorAll("math-field");
         mathFields.forEach((mf) => {
           const latex =
             mf.getAttribute("data-latex") || mf.textContent || mf.innerHTML;
           mf.innerHTML = "";
           mf.textContent = latex;
-          // Keep only the data-latex attribute
           const dataLatex = mf.getAttribute("data-latex");
           mf.removeAttribute("math-virtual-keyboard-policy");
           mf.setAttribute("contenteditable", false);
@@ -71,20 +55,27 @@ const QuestionEditor = ({ value, onContentChange }) => {
 
         const cleanedContent = tempDiv.innerHTML;
         console.log("Editor content (cleaned):", cleanedContent);
+        lastValueRef.current = cleanedContent; // Update last value
         onContentChange(cleanedContent);
       });
 
       quillRef.current.focus();
       console.log("Quill editor focused");
     }
+  }, [onContentChange]); // Initial setup, no dependency on value
 
-    return () => {
-      if (quillRef.current) {
-        console.log("Cleaning up Quill event listeners");
-        //quillRef.current.off("text-change");
-      }
-    };
-  }, [onContentChange]);
+  useEffect(() => {
+    console.log("QuestionEditor value update effect", { value });
+    if (
+      quillRef.current &&
+      value !== lastValueRef.current &&
+      value !== "<p><br></p>"
+    ) {
+      console.log("Updating Quill content with new value:", value);
+      quillRef.current.clipboard.dangerouslyPasteHTML(value);
+      lastValueRef.current = value; // Update last value to prevent loops
+    }
+  }, [value]); // Run when value changes
 
   return (
     <div ref={editorRef} className="bg-white border rounded-md min-h-[200px]" />
