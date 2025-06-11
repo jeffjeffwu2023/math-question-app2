@@ -10,40 +10,39 @@ const QuestionPreview = ({ content }) => {
     console.log("Content received:", content);
 
     if (previewRef.current) {
-      // Clean up zero-width spaces
-      const cleanedContent = content ? content.replace(/\u200B/g, "") : "";
-      console.log(
-        "Setting innerHTML to:",
-        cleanedContent || "<p>No content to preview</p>"
-      );
-
-      // Clear existing content to prevent DOM inconsistencies
+      // Clear existing content
       previewRef.current.innerHTML = "";
-      previewRef.current.innerHTML =
-        cleanedContent || "<p>No content to preview</p>";
+      // Set raw HTML including <math-field> tags
+      previewRef.current.innerHTML = content || "<p>No content to preview</p>";
 
-      // Render MathLive content
+      // Render MathLive content and initialize math-field elements
       try {
         MathLive.renderMathInElement(previewRef.current, {
           readOnly: true,
-          virtualKeyboardMode: "off",
-          renderToMathML: false, // Ensure rendering to HTML/MathML
+          virtualKeyboardMode: "off", // Disable keyboard icon
+          renderToMathML: false,
         });
         console.log(
           "MathLive rendering complete for:",
           previewRef.current.innerHTML
         );
+        const mathFields = previewRef.current.querySelectorAll("math-field");
+        console.log("Math fields found after rendering:", mathFields.length);
+        mathFields.forEach((mf) => {
+          const dataLatex = mf.getAttribute("data-latex");
+          if (dataLatex) {
+            mf.value = dataLatex.trim(); // Set value to render the expression
+            mf.setAttribute("virtual-keyboard-mode", "off"); // Explicitly disable keyboard
+            mf.setAttribute("readOnly", "true"); // Reinforce read-only
+            console.log(
+              "Initialized preview math-field with data-latex:",
+              dataLatex
+            );
+          }
+        });
       } catch (error) {
         console.error("Failed to render MathLive content:", error);
       }
-
-      const mathFields = previewRef.current.querySelectorAll("math-field");
-      console.log("Math fields found after rendering:", mathFields.length);
-      mathFields.forEach((mf) => {
-        if (mf.getAttribute("data-latex")) {
-          mf.innerHTML = mf.getAttribute("data-latex"); // Ensure content matches data-latex
-        }
-      });
       console.log("Final preview HTML:", previewRef.current.innerHTML);
     }
   }, [content]);
