@@ -1,7 +1,8 @@
+// AddQuestion.jsx
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { API, generateQuestion } from "../services/api";
+import { API, generateQuestion, addQuestion } from "../services/api";
 import KnowledgePointSelector from "./KnowledgePointSelector";
 import QuestionEditor from "./QuestionEditor";
 import QuestionPreview from "./QuestionPreview";
@@ -9,8 +10,6 @@ import { useTranslation } from "react-i18next";
 import { useKnowledgePoints } from "../context/KnowledgePointContext";
 import { useAuth } from "../context/AuthContext";
 import "mathlive";
-import { parseXAI } from "../utils/parse_xai"; // Import xAI parser
-import { parseOpenAI } from "../utils/parse_openai"; // Import OpenAI parser
 
 // Utility function to format numbers with fixed precision
 const formatNumber = (value) => {
@@ -24,56 +23,53 @@ const formatNumber = (value) => {
 };
 
 // Function to wrap LaTeX strings with <math-field> tags, centering single-line math expressions
-const wrapLatexWithMathField = (latex) => {
-  latex = convertDollarSign(latex);
-  // Split into lines and process each line
-  const lines = latex
-    .split("<br>")
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0);
-  latex = lines
-    .map((line) => {
-      // Check if the line contains only a math expression
-      const mathMatch = line.match(
-        /^\s*(\$[^\$]+\$|\$\$[^\$]+\$\$|\\begin\{[^}]+}.*?\\end\{[^}]+})\s*$/
-      );
-      if (mathMatch) {
-        // Wrap the entire line with <div style="text-align: center"> if it's only a math expression
-        return `<div style="text-align: center"><math-field data-latex="${mathMatch[1].trim()}">${mathMatch[1].trim()}</math-field></div>`;
+const wrapLatexWithMathField = (segments) => {
+  return segments
+    .map((segment) => {
+      if (segment.type === "latex") {
+        const mathMatch = segment.value.match(
+          /^\s*(\$[^\$]+\$|\$\$[^\$]+\$\$|\\begin\{[^}]+}.*?\\end\{[^}]+})\s*$/
+        );
+        if (mathMatch) {
+          return `<div style="text-align: center"><math-field data-latex="${segment.original_latex}">${segment.value}</math-field></div>`;
+        }
+        return `<math-field data-latex="${segment.original_latex}">${segment.value}</math-field>`;
       }
-      // For lines with mixed content, wrap only the math expressions
-      const latexExpressions = line
-        .split(/(\$[^\$]+\$|\$\$[^\$]+\$\$|\\begin\{[^}]+}.*?\\end\{[^}]+})/)
-        .filter(Boolean);
-      return latexExpressions
-        .map((expr) => {
-          if (
-            expr.match(
-              /^\$[^\$]+\$$|^\$\$[^\$]+\$\$|\\begin\{[^}]+}.*?\\end\{[^}]+}/
-            )
-          ) {
-            return `<math-field data-latex="${expr.trim()}">${expr.trim()}</math-field>`;
-          }
-          return expr; // Preserve non-LaTeX text
-        })
-        .join("");
+      return segment.value;
     })
-    .join("<br>");
-
-  latex = convertDollarSignBack(latex);
-  latex = latex.replace(/\\textbf\{([^}]*)\}/g, "$1<br>");
-  return latex || "<p><br></p>"; // Return empty paragraph if no content
+    .join("");
 };
 
-function convertDollarSign(latex) {
-  // Escape $ as \$ when it's a currency symbol (e.g., \$5, \$2) followed by a number
-  return latex.replace(/\$(\d+)/g, "__CURRENCY__$1");
-}
-
-function convertDollarSignBack(latex) {
-  // Convert __CURRENCY__ back to $ for LaTeX compatibility
-  return latex.replace(/__CURRENCY__(\d+)/g, (_, num) => `$${num}`);
-}
+// Function to parse HTML content back to segments (simplified)
+const parseContentToSegments = (htmlContent) => {
+  const tempDiv = document.createElement("div");
+  tempDiv.innerHTML = htmlContent;
+  const segments = [];
+  tempDiv.childNodes.forEach((node) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = node.textContent.trim();
+      if (text)
+        segments.push({ value: text, type: "text", original_latex: null });
+    } else if (node.nodeName === "MATH-FIELD") {
+      const value = node.getAttribute("data-latex") || node.textContent;
+      segments.push({
+        value: node.textContent,
+        type: "latex",
+        original_latex: value,
+      });
+    } else if (node.nodeName === "DIV" && node.querySelector("math-field")) {
+      const mathField = node.querySelector("math-field");
+      const value =
+        mathField.getAttribute("data-latex") || mathField.textContent;
+      segments.push({
+        value: mathField.textContent,
+        type: "latex",
+        original_latex: value,
+      });
+    }
+  });
+  return segments;
+};
 
 function AddQuestion() {
   const { t } = useTranslation();
@@ -86,14 +82,15 @@ function AddQuestion() {
   } = useKnowledgePoints();
   const [formData, setFormData] = useState({
     title: "",
-    content: "",
-    rawContent: "", // Editable raw LaTeX from backend (only question text with <br><br> for \n\n, no \[ \])
+    segments: [], // Ensure initial value is an array
+    content: "<p><br></p>", // Initial content for preview
     difficulty: "easy",
     topic: "algebra",
     knowledgePointIds: [],
     correctAnswer: "",
     questionType: "numerical",
     passValidation: false,
+    isManualEdit: false, // Flag to track manual edits
   });
   const [testAnswer, setTestAnswer] = useState("");
   const [answerFeedback, setAnswerFeedback] = useState("");
@@ -110,16 +107,31 @@ function AddQuestion() {
     console.log("Current formData:", formData);
   }, [formData]);
 
-  // Sync content and preview with rawContent when rawContent changes
+  // Sync segments to content only if not a manual edit
   useEffect(() => {
-    if (formData.rawContent) {
-      const wrappedContent = wrapLatexWithMathField(formData.rawContent);
-      setFormData((prev) => ({
-        ...prev,
-        content: wrappedContent,
-      }));
+    console.log("Syncing segments to content");
+    if (!formData.isManualEdit) {
+      const wrappedContent = wrapLatexWithMathField(formData.segments || []);
+      if (wrappedContent !== formData.content) {
+        setFormData((prev) => ({
+          ...prev,
+          content: wrappedContent || "<p><br></p>",
+        }));
+      }
     }
-  }, [formData.rawContent]);
+  }, [formData.segments, formData.isManualEdit]);
+
+  // Handle content changes from QuestionEditor and sync to segments
+  const handleContentChange = (content) => {
+    console.log("Content changed in editor:", content);
+    const newSegments = parseContentToSegments(content);
+    setFormData((prev) => ({
+      ...prev,
+      content,
+      segments: newSegments,
+      isManualEdit: true, // Set flag to prevent overwrite
+    }));
+  };
 
   useEffect(() => {
     const correctMathField = correctAnswerMathFieldRef.current;
@@ -145,11 +157,6 @@ function AddQuestion() {
         correctMathField.removeEventListener("input", handleCorrectInput);
         testMathField.removeEventListener("input", handleTestInput);
       };
-    } else {
-      console.log("MathLive refs not initialized yet:", {
-        correctMathField: !!correctMathField,
-        testMathField: !!testMathField,
-      });
     }
   }, []);
 
@@ -191,7 +198,7 @@ function AddQuestion() {
       console.log("API request config:", config);
 
       const responsePromise = API.post(
-        "/api/verify-answer",
+        "/api/verify-answer/",
         {
           questionType: formData.questionType,
           correctAnswer: formData.correctAnswer,
@@ -210,7 +217,7 @@ function AddQuestion() {
       );
 
       setAnswerFeedback(
-        response.data.isCorrect
+        response.data.isConditional
           ? t("Answer is correct")
           : t("Answer is incorrect") +
               `: Expected ${formattedExpected}, got ${formattedSimplifiedTest}`
@@ -248,27 +255,19 @@ function AddQuestion() {
         save_to_db: saveToDb,
         ai_provider: aiProvider,
       };
-      const response = await generateQuestion(criteria, aiProvider);
+      const response = await generateQuestion(criteria);
       console.log("Generated question response:", response.data);
-      const parser = aiProvider === "grok" ? parseXAI : parseOpenAI;
-      const { question, correctAnswer } = parser(response.data.question);
-      const wrappedContent = wrapLatexWithMathField(question); // Only question text with <br><br> for \n\n, no \[ \], center single-line math
       setFormData((prev) => ({
         ...prev,
         title: response.data.title || "Generated Question",
-        content: wrappedContent,
-        rawContent: question, // Only question text with <br><br> for \n\n, no \[ \]
-        correctAnswer: correctAnswer || "",
+        segments: response.data.question || [],
+        correctAnswer:
+          response.data.correctAnswer.length > 0
+            ? response.data.correctAnswer[0].value
+            : "",
         passValidation: response.data.passValidation || false,
+        isManualEdit: false, // Reset flag after generation
       }));
-      if (saveToDb) {
-        toast.success(t("Question generated and saved to MongoDB"));
-      } else {
-        toast.success(t("Question generated successfully"));
-      }
-      if (!response.data.passValidation) {
-        toast.warning(t("warning_validation_failed"));
-      }
     } catch (err) {
       console.error("Error generating question:", err);
       toast.error(t("Failed to generate question"));
@@ -281,17 +280,6 @@ function AddQuestion() {
     const { name, value } = e.target;
     console.log(`Field changed: ${name} = ${value}`);
     setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleContentChange = (content) => {
-    console.log("Content changed:", content);
-    setFormData((prev) => ({ ...prev, content }));
-  };
-
-  const handleRawContentChange = (e) => {
-    const value = e.target.value;
-    console.log("Raw content changed:", value);
-    setFormData((prev) => ({ ...prev, rawContent: value }));
   };
 
   const handleKnowledgePointsChange = (ids) => {
@@ -318,7 +306,10 @@ function AddQuestion() {
       }
       setLoading(true);
       try {
-        await API.post("/api/questions", formData);
+        await addQuestion({
+          ...formData,
+          question: formData.segments, // Send segments array to backend
+        });
         toast.success(t("question_added"), {
           toastId: "add-question-success",
         });
@@ -380,7 +371,7 @@ function AddQuestion() {
               {t("content")}
             </label>
             <QuestionEditor
-              value={formData.content}
+              segments={formData.segments || []}
               onContentChange={handleContentChange}
             />
             <div className="mt-2 flex space-x-4">
@@ -412,18 +403,6 @@ function AddQuestion() {
               {t("preview")}
             </label>
             <QuestionPreview content={formData.content} />
-          </div>
-          {/* Editable raw content section */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              {t("raw_content")}
-            </label>
-            <textarea
-              value={formData.rawContent}
-              onChange={handleRawContentChange}
-              className="mt-1 w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              style={{ minHeight: "100px", resize: "vertical" }}
-            />
           </div>
           <div>
             <label

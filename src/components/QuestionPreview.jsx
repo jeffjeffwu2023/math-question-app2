@@ -1,3 +1,4 @@
+// QuestionPreview.jsx
 import { useEffect, useRef } from "react";
 import * as MathLive from "mathlive";
 import "mathlive/static.css";
@@ -6,20 +7,18 @@ const QuestionPreview = ({ content }) => {
   const previewRef = useRef(null);
 
   useEffect(() => {
-    console.log("QuestionPreview useEffect triggered");
-    console.log("Content received:", content);
-
+    console.log("QuestionPreview useEffect triggered with content:", content);
     if (previewRef.current) {
       // Clear existing content
       previewRef.current.innerHTML = "";
-      // Set raw HTML including <math-field> tags
+      // Set raw HTML from content
       previewRef.current.innerHTML = content || "<p>No content to preview</p>";
 
       // Render MathLive content and initialize math-field elements
       try {
         MathLive.renderMathInElement(previewRef.current, {
           readOnly: true,
-          virtualKeyboardMode: "off", // Disable keyboard icon
+          virtualKeyboardMode: "off",
           renderToMathML: false,
         });
         console.log(
@@ -31,9 +30,9 @@ const QuestionPreview = ({ content }) => {
         mathFields.forEach((mf) => {
           const dataLatex = mf.getAttribute("data-latex");
           if (dataLatex) {
-            mf.value = dataLatex.trim(); // Set value to render the expression
-            mf.setAttribute("virtual-keyboard-mode", "off"); // Explicitly disable keyboard
-            mf.setAttribute("readOnly", "true"); // Reinforce read-only
+            mf.value = dataLatex.trim();
+            mf.setAttribute("virtual-keyboard-mode", "off");
+            mf.setAttribute("readOnly", "true");
             console.log(
               "Initialized preview math-field with data-latex:",
               dataLatex
@@ -45,7 +44,7 @@ const QuestionPreview = ({ content }) => {
       }
       console.log("Final preview HTML:", previewRef.current.innerHTML);
     }
-  }, [content]);
+  }, [content]); // Ensure re-render on content change
 
   return (
     <div

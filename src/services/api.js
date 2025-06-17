@@ -5,22 +5,25 @@ const API = axios.create({
   timeout: 30000,
 });
 
-API.interceptors.request.use((config) => {
-  let token = localStorage.getItem("token");
-  if (!token) {
-    token = localStorage.getItem("authToken"); // Fallback key
+API.interceptors.request.use(
+  (config) => {
+    let token = localStorage.getItem("token");
+    if (!token) {
+      token = localStorage.getItem("authToken"); // Fallback key
+    }
+    console.log("Token being used for request:", token);
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      console.warn("No token found in localStorage");
+    }
+    return config;
+  },
+  (error) => {
+    console.error("Request interceptor error:", error);
+    return Promise.reject(error);
   }
-  console.log("Token being used for request:", token);
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  } else {
-    console.warn("No token found in localStorage");
-  }
-  return config;
-}, (error) => {
-  console.error("Request interceptor error:", error);
-  return Promise.reject(error);
-});
+);
 
 API.interceptors.response.use(
   (response) => response,
@@ -46,7 +49,8 @@ export const login = (email, password) => {
 // User endpoints
 export const getUsers = (filters = {}) =>
   API.get("/api/users/", { params: filters });
-export const getUsersByTutor = (tutor_id) => API.get(`/api/users/bytutor/${tutor_id}`);
+export const getUsersByTutor = (tutor_id) =>
+  API.get(`/api/users/bytutor/${tutor_id}`);
 export const addUser = (user) => API.post("/api/users/", user);
 export const updateUser = (id, user) => API.put(`/api/users/${id}/`, user);
 export const deleteUser = (id) => API.delete(`/api/users/${id}/`);
@@ -65,6 +69,7 @@ export const submitAssignment = (id) =>
 
 // Question endpoints
 export const getQuestions = () => API.get("/api/questions/");
+export const getQuestionById = (id) => API.get(`/api/questions/${id}/`);
 export const addQuestion = (question) => API.post("/api/questions/", question);
 
 // Knowledge point endpoints
@@ -87,8 +92,7 @@ export const getAnswers = (studentId) =>
 
 export const performanceMetrics = (data) =>
   API.post("/api/students/performance-metrics/", data);
-export const timeSpent = (data) =>
-  API.post("/api/students/time-spent/", data);
+export const timeSpent = (data) => API.post("/api/students/time-spent/", data);
 
 // AI APIs
 export const analyzeStudent = (
@@ -127,7 +131,13 @@ export const verifyAnswer = (testAnswer) =>
 
 // Generate Question
 export const generateQuestion = (criteria) =>
-  API.post("/api/generate-question/", criteria);
+  API.post("/api/generate-question/", criteria, {
+    // Expect the response to include segments array
+    transformResponse: (data) => {
+      const result = JSON.parse(data);
+      return result; // Ensure the response is the parsed JSON with segments
+    },
+  });
 
 export { API };
 export default API;

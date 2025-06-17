@@ -12,8 +12,8 @@ export function parseXAI(raw) {
     questionText = questionText
       .replace(/\n\n/g, "<br><br>") // Two newlines
       .replace(/\n/g, " ") // Single newline to space
-      .replace(/\\\[/g, "") // Remove opening \[
-      .replace(/\\\]/g, "") // Remove closing \]
+//      .replace(/\\\[/g, "") // Remove opening \[
+//      .replace(/\\\]/g, "") // Remove closing \]
       .trim();
     return {
       question: questionText,
@@ -31,9 +31,8 @@ export function parseXAI(raw) {
       questionText = questionText
         .replace(/\n\n/g, "<br><br>") // Two newlines
         .replace(/\n/g, " ") // Single newline to space
-        .replace(/\\\[/g, "") // Remove opening \[
-        .replace(/\\\]/g, "") // Remove closing \]
-        .replace(/\\\$(\d+)/g, "\\$1") // Convert \$5 to \$5 (escaped LaTeX)
+//        .replace(/\\\[/g, "") // Remove opening \[
+//        .replace(/\\\]/g, "") // Remove closing \]
         .trim();
       return {
         question: questionText,
@@ -43,10 +42,9 @@ export function parseXAI(raw) {
       console.error("Fallback parsing failed:", fallbackError);
       let questionText = raw
         .replace(/\n\n/g, "<br><br>") // Two newlines
-        .replace(/\n/g, " ") // Single newline to space
-        .replace(/\\\[/g, "") // Remove opening \[
-        .replace(/\\\]/g, "") // Remove closing \]
-        .replace(/\\\$(\d+)/g, "\\$1") // Convert \$5 to \$5 (escaped LaTeX)
+        .replace(/\n/g, " ") // Single newline
+//        .replace(/\\\[/g, "") // Remove opening \[
+//        .replace(/\\\]/g, "") // Remove closing \]
         .trim();
       return { question: questionText, correctAnswer: "" };
     }
