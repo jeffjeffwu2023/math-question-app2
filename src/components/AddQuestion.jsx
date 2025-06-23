@@ -31,9 +31,9 @@ const wrapLatexWithMathField = (segments) => {
           /^\s*(\$[^\$]+\$|\$\$[^\$]+\$\$|\\begin\{[^}]+}.*?\\end\{[^}]+})\s*$/
         );
         if (mathMatch) {
-          return `<div style="text-align: center"><math-field data-latex="${segment.original_latex}">${segment.value}</math-field></div>`;
+          return `<div style="text-align: center"><math-field data-latex="${segment.value}">${segment.value}</math-field></div>`;
         }
-        return `<math-field data-latex="${segment.original_latex}">${segment.value}</math-field>`;
+        return `<math-field data-latex="${segment.value}">${segment.value}</math-field>`;
       }
       return segment.value;
     })
@@ -68,6 +68,7 @@ const parseContentToSegments = (htmlContent) => {
       });
     }
   });
+  console.log("Parsed segments:", segments); // Debug log
   return segments;
 };
 
@@ -125,6 +126,7 @@ function AddQuestion() {
   const handleContentChange = (content) => {
     console.log("Content changed in editor:", content);
     const newSegments = parseContentToSegments(content);
+    console.log("New segments after parsing:", newSegments); // Debug log
     setFormData((prev) => ({
       ...prev,
       content,
@@ -304,6 +306,19 @@ function AddQuestion() {
         });
         return;
       }
+      // Validate that segments is not empty and has at least one non-empty value
+
+      if (
+        !formData.segments ||
+        formData.segments.length === 0 ||
+        !formData.segments.some((s) => s.value && s.value.trim())
+      ) {
+        toast.error(t("question_cannot_be_empty"), {
+          toastId: "empty-question",
+        });
+        return;
+      }
+
       setLoading(true);
       try {
         await addQuestion({
@@ -315,8 +330,12 @@ function AddQuestion() {
         });
         navigate("/admin-dashboard");
       } catch (err) {
-        const errorMsg =
-          err.response?.data?.detail || t("failed_to_add_question");
+        const errorMsg = err.response?.data?.detail
+          ? Array.isArray(err.response.data.detail)
+            ? err.response.data.detail[0]?.msg || t("failed_to_add_question")
+            : err.response.data.detail
+          : t("failed_to_add_question");
+        console.log("Submission error details:", err.response?.data); // Debug log
         setError(errorMsg);
         toast.error(errorMsg, { toastId: "add-question-error" });
       } finally {

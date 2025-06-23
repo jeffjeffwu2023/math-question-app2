@@ -53,8 +53,10 @@ const QuestionEditor = ({ segments = [], onContentChange }) => {
           ? segments
               .map((segment) =>
                 segment.type === "latex"
-                  ? `<math-field data-latex="${segment.original_latex}">${segment.value}</math-field>`
-                  : segment.value
+                  ? `<math-field data-latex="${segment.value}">${segment.value}</math-field>`
+                  : segment.type === "text"
+                  ? segment.value
+                  : "<p/><p>"
               )
               .join("")
           : "<p><br></p>";
@@ -101,8 +103,10 @@ const QuestionEditor = ({ segments = [], onContentChange }) => {
       const newContent = segments
         .map((segment) =>
           segment.type === "latex"
-            ? `<math-field data-latex="${segment.original_latex}">${segment.value}</math-field>`
-            : segment.value
+            ? `<math-field data-latex="${segment.value}">${segment.value}</math-field>`
+            : segment.type === "text"
+            ? segment.value
+            : "<p/><p>"
         )
         .join("");
       
@@ -128,7 +132,7 @@ const QuestionEditor = ({ segments = [], onContentChange }) => {
   }, [segments]);
 
   return (
-    <div ref={editorRef} className="bg-white border rounded-md min-h-[200px]" />
+    <div id="content" ref={editorRef} className="bg-white border rounded-md min-h-[200px]" />
   );
 };
 
