@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Test parseContentToSegments</title>
+  </head>
+  <body>
+    <script>
+      const parseContentToSegments = (htmlContent) => {
+        const tempDiv = document.createElement("div");
+        console.log(tempDiv)
+        tempDiv.innerHTML = htmlContent;
+        console.log(tempDiv)
+        const segments = [];
+        tempDiv.childNodes.forEach((node) => {
+          console.log("nodeName, nodeType:", node.nodeName, node.nodeType)  
+          console.log(node.textContent)
+          if (node.nodeName === "MATH-FIELD") {
+            const value = node.getAttribute("data-latex") || node.textContent;
+            segments.push({
+              value: node.textContent,
+              type: "latex",
+              original_latex: value,
+            });
+          } else if (
+            node.nodeName === "DIV" &&
+            node.querySelector("math-field")
+          ) {
+            const mathField = node.querySelector("math-field");
+            const value =
+              mathField.getAttribute("data-latex") || mathField.textContent;
+            segments.push({
+              value: mathField.textContent,
+              type: "latex",
+              original_latex: value,
+            });
+          } else{
+            const text = node.textContent.trim();
+            if (text)
+              segments.push({
+                value: text,
+                type: "text",
+                original_latex: null,
+              });
+          }  
+        });
+        console.log("Parsed segments:", segments); // Debug log
+        return segments;
+      };
+
+      const str = "<p>abcd</p>";
+      const newSegments = parseContentToSegments(str);
+      console.log(newSegments);
+    </script>
+  </body>
+</html>

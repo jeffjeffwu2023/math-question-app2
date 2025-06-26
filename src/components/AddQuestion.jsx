@@ -27,13 +27,9 @@ const wrapLatexWithMathField = (segments) => {
   return segments
     .map((segment) => {
       if (segment.type === "latex") {
-        const mathMatch = segment.value.match(
-          /^\s*(\$[^\$]+\$|\$\$[^\$]+\$\$|\\begin\{[^}]+}.*?\\end\{[^}]+})\s*$/
-        );
-        if (mathMatch) {
-          return `<div style="text-align: center"><math-field data-latex="${segment.value}">${segment.value}</math-field></div>`;
-        }
         return `<math-field data-latex="${segment.value}">${segment.value}</math-field>`;
+      }else if (segment.type == "newline") {
+        return `<p><br></p>`;
       }
       return segment.value;
     })
@@ -42,11 +38,18 @@ const wrapLatexWithMathField = (segments) => {
 
 // Function to parse HTML content back to segments (simplified)
 const parseContentToSegments = (htmlContent) => {
+  console.log("htmlContent:", htmlContent)
+
   const tempDiv = document.createElement("div");
   tempDiv.innerHTML = htmlContent;
   const segments = [];
+  console.log("tempDiv.innerHTML:", tempDiv.innerHTML);
+  console.log(tempDiv.childNodes)
   tempDiv.childNodes.forEach((node) => {
-    if (node.nodeType === Node.TEXT_NODE) {
+    console.log("node.name/type/value:", node.nodeName, node.nodeType, node.nodeValue)
+    if (node.nodeType === Node.ELEMENT_NODE && node.nodeName === "P") {
+        segments.push({ value: "newline", type: "text", original_latex: null });
+    }else if (node.nodeType === Node.TEXT_NODE) {
       const text = node.textContent.trim();
       if (text)
         segments.push({ value: text, type: "text", original_latex: null });
@@ -66,6 +69,12 @@ const parseContentToSegments = (htmlContent) => {
         type: "latex",
         original_latex: value,
       });
+    } else {
+      console.log("node.textContent:", node.textContent);
+
+      const text = node.textContent.trim();
+      if (text)
+        segments.push({ value: text, type: "text", original_latex: null });
     }
   });
   console.log("Parsed segments:", segments); // Debug log
@@ -125,12 +134,12 @@ function AddQuestion() {
   // Handle content changes from QuestionEditor and sync to segments
   const handleContentChange = (content) => {
     console.log("Content changed in editor:", content);
-    const newSegments = parseContentToSegments(content);
-    console.log("New segments after parsing:", newSegments); // Debug log
+    //const newSegments = parseContentToSegments(content);
+    //console.log("New segments after parsing:", newSegments); // Debug log
     setFormData((prev) => ({
       ...prev,
       content,
-      segments: newSegments,
+      //segments: newSegments,
       isManualEdit: true, // Set flag to prevent overwrite
     }));
   };
@@ -307,7 +316,9 @@ function AddQuestion() {
         return;
       }
       // Validate that segments is not empty and has at least one non-empty value
-
+      console.log("formData:", formData);
+      formData.segments = parseContentToSegments(formData.content);
+      
       if (
         !formData.segments ||
         formData.segments.length === 0 ||

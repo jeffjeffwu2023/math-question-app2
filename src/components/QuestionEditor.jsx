@@ -56,7 +56,9 @@ const QuestionEditor = ({ segments = [], onContentChange }) => {
                   ? `<math-field data-latex="${segment.value}">${segment.value}</math-field>`
                   : segment.type === "text"
                   ? segment.value
-                  : "<p/><p>"
+                  : segment.type == "newline"
+                  ? "<p><br></p>"
+                  : ""
               )
               .join("")
           : "<p><br></p>";
@@ -106,7 +108,9 @@ const QuestionEditor = ({ segments = [], onContentChange }) => {
             ? `<math-field data-latex="${segment.value}">${segment.value}</math-field>`
             : segment.type === "text"
             ? segment.value
-            : "<p/><p>"
+            : segment.type == "newline"
+            ? "<p><br></p>"
+            : ""
         )
         .join("");
       
