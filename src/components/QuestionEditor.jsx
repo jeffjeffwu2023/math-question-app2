@@ -57,11 +57,13 @@ const QuestionEditor = ({ segments = [], onContentChange }) => {
                   : segment.type === "text"
                   ? segment.value
                   : segment.type == "newline"
-                  ? "<p><br></p>"
+                  //? "<p><br></p>"
+                  ? "<p>"
                   : ""
               )
               .join("")
-          : "<p><br></p>";
+          //: "<p><br></p>";
+          : ""
       quillRef.current.clipboard.dangerouslyPasteHTML(initialContent);
       console.log("Initial content set from segments:", initialContent);
 
@@ -109,7 +111,7 @@ const QuestionEditor = ({ segments = [], onContentChange }) => {
             : segment.type === "text"
             ? segment.value
             : segment.type == "newline"
-            ? "<p><br></p>"
+            ? "<p>"
             : ""
         )
         .join("");

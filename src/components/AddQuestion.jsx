@@ -29,9 +29,10 @@ const wrapLatexWithMathField = (segments) => {
       if (segment.type === "latex") {
         return `<math-field data-latex="${segment.value}">${segment.value}</math-field>`;
       }else if (segment.type == "newline") {
-        return `<p><br></p>`;
+        return `<p>`;
+      }else{
+        return segment.value;
       }
-      return segment.value;
     })
     .join("");
 };
@@ -48,8 +49,14 @@ const parseContentToSegments = (htmlContent) => {
   tempDiv.childNodes.forEach((node) => {
     console.log("node.name/type/value:", node.nodeName, node.nodeType, node.nodeValue)
     if (node.nodeType === Node.ELEMENT_NODE && node.nodeName === "P") {
-        segments.push({ value: "newline", type: "text", original_latex: null });
-    }else if (node.nodeType === Node.TEXT_NODE) {
+        segments.push({ value: "", type: "newline", original_latex: null });
+        console.log("node.textContent:", node.textContent);
+
+        const text = node.textContent.trim();
+        if (text)
+          segments.push({ value: text, type: "text", original_latex: null });
+
+      }else if (node.nodeType === Node.TEXT_NODE) {
       const text = node.textContent.trim();
       if (text)
         segments.push({ value: text, type: "text", original_latex: null });
@@ -93,7 +100,7 @@ function AddQuestion() {
   const [formData, setFormData] = useState({
     title: "",
     segments: [], // Ensure initial value is an array
-    content: "<p><br></p>", // Initial content for preview
+    content: "<p>", // Initial content for preview
     difficulty: "easy",
     topic: "algebra",
     knowledgePointIds: [],
@@ -125,7 +132,7 @@ function AddQuestion() {
       if (wrappedContent !== formData.content) {
         setFormData((prev) => ({
           ...prev,
-          content: wrappedContent || "<p><br></p>",
+          content: wrappedContent || "",
         }));
       }
     }
