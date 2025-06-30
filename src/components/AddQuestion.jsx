@@ -248,13 +248,15 @@ function AddQuestion() {
       console.log("Verification response:", response.data);
 
       const formattedExpected = formatNumber(response.data.expected);
-      const formattedSimplifiedTest = formatNumber(response.data.simplifiedTest);
+      const formattedSimplifiedTest = formatNumber(
+        response.data.simplifiedTest
+      );
 
       setAnswerFeedback(
         response.data.isConditional
           ? t("Answer is correct")
           : t("Answer is incorrect") +
-            `: Expected ${formattedExpected}, got ${formattedSimplifiedTest}`
+              `: Expected ${formattedExpected}, got ${formattedSimplifiedTest}`
       );
     } catch (err) {
       console.error("Answer verification error:", err);
@@ -288,6 +290,7 @@ function AddQuestion() {
         topic: formData.topic,
         save_to_db: saveToDb,
         ai_provider: aiProvider,
+        include_correct_answers: true, // Request correct answers explicitly
       };
       const response = await generateQuestion(criteria);
       console.log("Generated question response:", response.data);
@@ -302,8 +305,13 @@ function AddQuestion() {
         updatedCorrectAnswers = [{ value: correctAnswers, type: "latex" }];
       } else {
         updatedCorrectAnswers = [{ value: "", type: "latex" }];
+        console.warn("No correct answers received from API, using default.");
       }
       console.log("Updated correct answers before set:", updatedCorrectAnswers);
+      // Update refs to match the new number of correct answers before state set
+      correctAnswerRefs.current = Array(updatedCorrectAnswers.length).fill(
+        null
+      );
       setFormData((prev) => ({
         ...prev,
         title: response.data.title || "Generated Question",
@@ -313,12 +321,43 @@ function AddQuestion() {
         isManualEdit: false, // Reset flag after generation
       }));
       console.log("CorrectAnswer after set:", formData.correctAnswer); // Debug log
+      // Invoke function to render and populate correct answer fields
+      renderCorrectAnswerFields();
+      console.log(
+        "Refs length after update:",
+        correctAnswerRefs.current.length
+      ); // Debug log
     } catch (err) {
       console.error("Error generating question:", err);
       toast.error(t("Failed to generate question"));
     } finally {
       setLoading(false);
     }
+  };
+
+  // Function to dynamically render correct answer fields
+  const renderCorrectAnswerFields = () => {
+    console.log(
+      "Rendering correct answer fields with:",
+      formData.correctAnswer
+    );
+
+    console.log("corectAnswer in formData:", formData.correctAnswer);
+
+    return formData.correctAnswer.map((ans, index) => (
+      <div key={index} className="mb-2">
+        <math-field
+          //ref={(el) => (correctAnswerRefs.current[index] = el)}
+          className="mt-1 w-full p-3 border border-gray-300 rounded-md"
+          style={{ minHeight: "50px", minWidth: "100%" }}
+          //onInput={handleCorrectInput(index)}
+          //value={ans.value}
+          data-latex={ans.value}
+        >
+          {ans.value}
+        </math-field>
+      </div>
+    ));
   };
 
   const handleChange = (e) => {
@@ -567,17 +606,7 @@ function AddQuestion() {
               {t("Correct Answer")}{" "}
               <span className="text-gray-500">{t("(optional)")}</span>
             </label>
-            {formData.correctAnswer.map((ans, index) => (
-              <div key={index} className="mb-2">
-                <math-field
-                  ref={(el) => (correctAnswerRefs.current[index] = el)}
-                  className="mt-1 w-full p-3 border border-gray-300 rounded-md"
-                  style={{ minHeight: "50px", minWidth: "100%" }}
-                  onInput={handleCorrectInput(index)}
-                  value={ans.value}
-                />
-              </div>
-            ))}
+            {renderCorrectAnswerFields()}
             <button
               type="button"
               onClick={handleAddCorrectAnswer}
