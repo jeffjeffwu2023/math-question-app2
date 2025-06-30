@@ -57,8 +57,8 @@ const QuestionEditor = ({ segments = [], onContentChange }) => {
                   : segment.type === "text"
                   ? segment.value
                   : segment.type == "newline"
-                  //? "<p><br></p>"
-                  ? "<p>"
+                  ? "<p><br></p>"
+                  //? "<p>"
                   : ""
               )
               .join("")
@@ -111,7 +111,7 @@ const QuestionEditor = ({ segments = [], onContentChange }) => {
             : segment.type === "text"
             ? segment.value
             : segment.type == "newline"
-            ? "<p>"
+            ? "<p><br></p>"
             : ""
         )
         .join("");
