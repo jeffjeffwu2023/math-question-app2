@@ -218,14 +218,15 @@ function AddQuestion() {
     setVerifyLoading(true);
     console.log("Starting verification, verifyLoading:", true);
     console.log(
-      "Sending to backend - Correct Answers:",
-      formData.correctAnswer,
+      "Verification input - Correct Answers:",
+      formData.correctAnswer.map((ans) => ans.value),
       "Test Answer:",
       testValue
     );
 
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("Verification timed out")), 5000)
+    const timeoutPromise = new Promise(
+      (_, reject) =>
+        setTimeout(() => reject(new Error("Verification timed out")), 10000) // 10 seconds timeout
     );
 
     try {
@@ -243,27 +244,53 @@ function AddQuestion() {
         },
         config
       );
+      console.log("Response promise created:", responsePromise); // Debug log
 
       const response = await Promise.race([responsePromise, timeoutPromise]);
-      console.log("Verification response:", response.data);
+      console.log("Full Verification response data:", response.data); // Log full response
 
-      const formattedExpected = formatNumber(response.data.expected);
-      const formattedSimplifiedTest = formatNumber(
-        response.data.simplifiedTest
-      );
+      // Handle multiple correct answers
+      let isMatch = false;
+      let expectedValues = [];
+      if (Array.isArray(response.data.correctAnswers)) {
+        expectedValues = response.data.correctAnswers.map(formatNumber);
+        isMatch = expectedValues.some(
+          (expected) => expected === formatNumber(testValue)
+        );
+      } else if (response.data.expected) {
+        expectedValues = [formatNumber(response.data.expected)];
+        isMatch =
+          formatNumber(response.data.expected) === formatNumber(testValue);
+      } else {
+        console.warn("No expected values in response:", response.data);
+        expectedValues = formData.correctAnswer.map((ans) =>
+          formatNumber(ans.value)
+        ); // Fallback to sent correctAnswers
+        isMatch = expectedValues.some(
+          (expected) => expected === formatNumber(testValue)
+        );
+      }
 
-      setAnswerFeedback(
-        response.data.isConditional
-          ? t("Answer is correct")
-          : t("Answer is incorrect") +
-              `: Expected ${formattedExpected}, got ${formattedSimplifiedTest}`
-      );
+      if (isMatch) {
+        setAnswerFeedback(t("Answer is correct"));
+      } else if (expectedValues.length > 0) {
+        setAnswerFeedback(
+          t("Answer is incorrect") +
+            `: Expected ${expectedValues.join(" or ")}, got ${formatNumber(
+              testValue
+            )}`
+        );
+      } else {
+        setAnswerFeedback(t("Verification failed: No expected values"));
+      }
+      console.log("Feedback set to:", answerFeedback); // Debug log
     } catch (err) {
       console.error("Answer verification error:", err);
       console.error("Error response data:", err.response?.data);
       setAnswerFeedback(
         t("Verification failed: ") + (err.response?.data?.detail || err.message)
       );
+      console.log("Error feedback set to:", answerFeedback); // Debug log
     } finally {
       setVerifyLoading(false);
       console.log("Finished verification, verifyLoading:", false);
@@ -341,7 +368,6 @@ function AddQuestion() {
       "Rendering correct answer fields with:",
       formData.correctAnswer
     );
-
     console.log("corectAnswer in formData:", formData.correctAnswer);
 
     return formData.correctAnswer.map((ans, index) => (
