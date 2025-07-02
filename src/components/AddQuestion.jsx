@@ -11,6 +11,25 @@ import { useKnowledgePoints } from "../context/KnowledgePointContext";
 import { useAuth } from "../context/AuthContext";
 import "mathlive";
 
+// Utility function to remove empty values from an array
+const removeEmptyValues = (arr) => {
+  return arr.filter(
+    (item) => item !== undefined && item !== null && item !== ""
+  );
+};
+
+const removeEmptyLatexValues = (arr) => {
+  // log the input array for debugging
+  console.log("Input array for removeEmptyLatexValues:", arr);
+  // log each item in the array
+  arr.forEach((item, index) => {
+    console.log(`Item ${index}:`, item);
+  });
+  return arr.filter(
+    (item) => item !== undefined && item !== null && item.value.trim() !== ""
+  );
+};
+
 // Utility function to format numbers with fixed precision
 const formatNumber = (value) => {
   try {
@@ -108,12 +127,13 @@ function AddQuestion() {
     difficulty: "easy",
     topic: "algebra",
     knowledgePointIds: [],
+    correctAnswerRelationship: "or", // Default to "or" for multiple correct answers
     correctAnswer: [{ value: "", type: "latex" }], // Array of correct answers
     questionType: "numerical",
     passValidation: false,
     isManualEdit: false, // Flag to track manual edits
   });
-  const [testAnswer, setTestAnswer] = useState("");
+  const [testAnswer, setTestAnswer] = useState([{ value: "", type: "latex" }]); // Array of test answers
   const [answerFeedback, setAnswerFeedback] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -122,7 +142,8 @@ function AddQuestion() {
   const [aiProvider, setAiProvider] = useState("grok");
 
   const correctAnswerRefs = useRef([]); // Array of refs for correct answer fields
-  const testAnswerMathFieldRef = useRef(null);
+  const testAnswerRefs = useRef([]); // Array of refs for test answer fields
+  const verifyAnswerButtonRef = useRef(null);
 
   useEffect(() => {
     console.log("Current formData:", formData);
@@ -152,22 +173,38 @@ function AddQuestion() {
     }));
   };
 
+  const updateCorrectAnswers = () => {
+    const newCorrectAnswers = correctAnswerRefs.current.map((ref, index) => ({
+      value: ref?.value || formData.correctAnswer[index]?.value || "",
+      type: formData.correctAnswer[index]?.type || "latex", // Preserve or default to "latex"
+    }));
+    if (
+      JSON.stringify(newCorrectAnswers) !==
+      JSON.stringify(formData.correctAnswer)
+    ) {
+      setFormData((prev) => ({ ...prev, correctAnswer: newCorrectAnswers }));
+    }
+  };
+
+  const updateTestAnswers = () => {
+    const newTestAnswers = testAnswerRefs.current.map((ref, index) => ({
+      value: ref?.value || testAnswer[index]?.value || "",
+      type: testAnswer[index]?.type || "latex", // Preserve or default to "latex"
+    }));
+    if (JSON.stringify(newTestAnswers) !== JSON.stringify(testAnswer)) {
+      setTestAnswer(newTestAnswers);
+    }
+  };
+
   // Update correct answer values from math-fields
   useEffect(() => {
-    const updateCorrectAnswers = () => {
-      const newCorrectAnswers = correctAnswerRefs.current.map((ref, index) => ({
-        value: ref?.value || formData.correctAnswer[index]?.value || "",
-        type: "latex",
-      }));
-      if (
-        JSON.stringify(newCorrectAnswers) !==
-        JSON.stringify(formData.correctAnswer)
-      ) {
-        setFormData((prev) => ({ ...prev, correctAnswer: newCorrectAnswers }));
-      }
-    };
     updateCorrectAnswers();
   }, [formData.correctAnswer]);
+
+  // Update test answer values from math-fields
+  useEffect(() => {
+    updateTestAnswers();
+  }, [testAnswer]);
 
   // Handle input changes for each correct answer math-field
   const handleCorrectInput = (index) => (e) => {
@@ -177,39 +214,60 @@ function AddQuestion() {
     const newCorrectAnswers = [...formData.correctAnswer];
     newCorrectAnswers[index] = {
       value: e.target.value || "",
-      type: "latex",
+      type: newCorrectAnswers[index]?.type || "latex", // Preserve existing type
     };
     setFormData((prev) => ({ ...prev, correctAnswer: newCorrectAnswers }));
   };
 
+  // Handle input changes for each test answer math-field
+  const handleTestInput = (index) => (e) => {
+    const newRefs = [...testAnswerRefs.current];
+    newRefs[index] = e.target;
+    testAnswerRefs.current = newRefs;
+    const newTestAnswers = [...testAnswer];
+    newTestAnswers[index] = {
+      value: e.target.value || "",
+      type: newTestAnswers[index]?.type || "latex", // Preserve existing type
+    };
+    setTestAnswer(newTestAnswers);
+  };
+
   // Handle test answer input
   useEffect(() => {
-    const testMathField = testAnswerMathFieldRef.current;
-    if (testMathField) {
-      const handleTestInput = () => {
-        const latex = testMathField.value;
-        console.log("Test Answer input (LaTeX):", latex);
-        setTestAnswer(latex);
-        setAnswerFeedback("");
-      };
-      testMathField.addEventListener("input", handleTestInput);
-      return () => testMathField.removeEventListener("input", handleTestInput);
-    }
-  }, [verifyLoading]);
+    const testMathFields = testAnswerRefs.current;
+    testMathFields.forEach((field, index) => {
+      if (field) {
+        const handleInput = () => {
+          const latex = field.value;
+          console.log(`Test Answer ${index} input (LaTeX):`, latex);
+          updateTestAnswers();
+          setAnswerFeedback("");
+        };
+        field.addEventListener("input", handleInput);
+        return () => field.removeEventListener("input", handleInput);
+      }
+    });
+  }, [verifyLoading, testAnswerRefs.current.length]);
 
   useEffect(() => {
     console.log("Test Answer field disabled state:", verifyLoading);
-    if (testAnswerMathFieldRef.current) {
-      const testMathField = testAnswerMathFieldRef.current;
-      testMathField.disabled = verifyLoading;
-      if (!verifyLoading) {
-        testMathField.focus();
-      }
+    if (testAnswerRefs.current.length > 0) {
+      testAnswerRefs.current.forEach((field) => {
+        if (field) {
+          field.disabled = verifyLoading;
+          if (!verifyLoading) {
+            field.focus();
+          }
+        }
+      });
     }
   }, [verifyLoading]);
 
-  const verifyAnswer = async (testValue) => {
-    if (!formData.correctAnswer.some((ans) => ans.value) || !testValue) {
+  const verifyAnswer = async (testValues) => {
+    if (
+      !formData.correctAnswer.some((ans) => ans.value) ||
+      !testValues.some((ans) => ans.value)
+    ) {
       setAnswerFeedback("");
       setVerifyLoading(false);
       return;
@@ -219,9 +277,12 @@ function AddQuestion() {
     console.log("Starting verification, verifyLoading:", true);
     console.log(
       "Verification input - Correct Answers:",
-      formData.correctAnswer.map((ans) => ans.value),
-      "Test Answer:",
-      testValue
+      formData.correctAnswer.map((ans) => ({
+        value: ans.value,
+        type: ans.type,
+      })),
+      "Test Answers:",
+      testValues.map((ans) => ({ value: ans.value, type: ans.type }))
     );
 
     const timeoutPromise = new Promise(
@@ -235,12 +296,18 @@ function AddQuestion() {
       };
       console.log("API request config:", config);
 
+      testValues = removeEmptyLatexValues(testValues);
+      formData.correctAnswer = removeEmptyLatexValues(formData.correctAnswer);
+      console.log("Formatted test values:", testValues);
+      console.log("Formatted correct answers:", formData.correctAnswer);
+
       const responsePromise = API.post(
         "/api/verify-answer/",
         {
           questionType: formData.questionType,
-          correctAnswers: formData.correctAnswer.map((ans) => ans.value),
-          testAnswer: testValue,
+          correctAnswerRelationship: formData.correctAnswerRelationship,
+          correctAnswers: formData.correctAnswer,
+          testAnswers: testValues,
         },
         config
       );
@@ -249,40 +316,33 @@ function AddQuestion() {
       const response = await Promise.race([responsePromise, timeoutPromise]);
       console.log("Full Verification response data:", response.data); // Log full response
 
-      // Handle multiple correct answers
-      let isMatch = false;
-      let expectedValues = [];
-      if (Array.isArray(response.data.correctAnswers)) {
-        expectedValues = response.data.correctAnswers.map(formatNumber);
-        isMatch = expectedValues.some(
-          (expected) => expected === formatNumber(testValue)
-        );
-      } else if (response.data.expected) {
-        expectedValues = [formatNumber(response.data.expected)];
-        isMatch =
-          formatNumber(response.data.expected) === formatNumber(testValue);
-      } else {
-        console.warn("No expected values in response:", response.data);
-        expectedValues = formData.correctAnswer.map((ans) =>
-          formatNumber(ans.value)
-        ); // Fallback to sent correctAnswers
-        isMatch = expectedValues.some(
-          (expected) => expected === formatNumber(testValue)
-        );
+      // Handle multiple correct and test answers using backend results
+      if (!response.data.results || !Array.isArray(response.data.results)) {
+        console.warn("Invalid results format in response:", response.data);
+        setAnswerFeedback(t("Verification failed: Invalid response format"));
+        return;
       }
 
-      if (isMatch) {
-        setAnswerFeedback(t("Answer is correct"));
-      } else if (expectedValues.length > 0) {
-        setAnswerFeedback(
-          t("Answer is incorrect") +
-            `: Expected ${expectedValues.join(" or ")}, got ${formatNumber(
-              testValue
-            )}`
-        );
-      } else {
-        setAnswerFeedback(t("Verification failed: No expected values"));
-      }
+      const results = response.data.results;
+      console.log("Received results:", results); // Debug log for results structure
+      const feedbackParts = results.map((result) =>
+        result.isCorrect
+          ? `${t("Test")} '${result.testAnswer}' ${t("is correct")}`
+          : `${t("Test")} '${result.testAnswer}' ${t("is incorrect")}: ${t(
+              "Expected"
+            )} ${
+              result.expectedAnswer
+                ? result.expectedAnswer
+                : result.expectedAnswers.join(" or ")
+            }, ${t("got")} ${result.testAnswer}`
+      );
+
+      const allCorrect = results.every((result) => result.isCorrect);
+      setAnswerFeedback(
+        allCorrect
+          ? t("All test answers are correct")
+          : feedbackParts.join(" | ")
+      );
       console.log("Feedback set to:", answerFeedback); // Debug log
     } catch (err) {
       console.error("Answer verification error:", err);
@@ -298,12 +358,20 @@ function AddQuestion() {
   };
 
   const handleVerifyAnswer = () => {
+    console.log("Verifying answer with testAnswers:", testAnswer);
+    console.log("Correct Answers:", formData.correctAnswer);
+
+    updateCorrectAnswers();
+    updateTestAnswers();
+    console.log("Updated Correct Answers:", formData.correctAnswer);
+    console.log("Updated Test Answers:", testAnswer);
+
     if (!formData.correctAnswer.some((ans) => ans.value)) {
       setAnswerFeedback(t("Please enter at least one Correct Answer first"));
       return;
     }
-    if (!testAnswer) {
-      setAnswerFeedback(t("Please enter a Test Answer"));
+    if (!testAnswer.some((ans) => ans.value)) {
+      setAnswerFeedback(t("Please enter at least one Test Answer"));
       return;
     }
     verifyAnswer(testAnswer);
@@ -369,21 +437,136 @@ function AddQuestion() {
       formData.correctAnswer
     );
     console.log("corectAnswer in formData:", formData.correctAnswer);
-
+    if (!formData.correctAnswer || formData.correctAnswer.length === 0) {
+      return (
+        <div className="text-gray-500 flex items-center">
+          <math-field
+            ref={(el) => (correctAnswerRefs.current[0] = el)}
+            className="mt-1 w-full p-3 border border-gray-300 rounded-md"
+            style={{ minHeight: "50px", minWidth: "100%" }}
+            onInput={handleCorrectInput(0)}
+            data-latex=""
+          ></math-field>
+          <select
+            value={formData.correctAnswer[0]?.type || "latex"}
+            onChange={(e) =>
+              setFormData((prev) => {
+                const newCorrectAnswers = [...prev.correctAnswer];
+                newCorrectAnswers[0] = {
+                  ...newCorrectAnswers[0],
+                  type: e.target.value,
+                };
+                return { ...prev, correctAnswer: newCorrectAnswers };
+              })
+            }
+            className="ml-2 p-1 border border-gray-300 rounded"
+          >
+            <option value="latex">LaTeX</option>
+            <option value="text">Text</option>
+          </select>
+        </div>
+      );
+    }
     return formData.correctAnswer.map((ans, index) => (
-      <div key={index} className="mb-2">
+      <div key={index} className="mb-2 flex items-center">
         <math-field
-          //ref={(el) => (correctAnswerRefs.current[index] = el)}
+          ref={(el) => (correctAnswerRefs.current[index] = el)}
           className="mt-1 w-full p-3 border border-gray-300 rounded-md"
           style={{ minHeight: "50px", minWidth: "100%" }}
-          //onInput={handleCorrectInput(index)}
-          //value={ans.value}
+          onInput={handleCorrectInput(index)}
           data-latex={ans.value}
         >
           {ans.value}
         </math-field>
+        <select
+          value={ans.type || "latex"}
+          onChange={(e) =>
+            setFormData((prev) => {
+              const newCorrectAnswers = [...prev.correctAnswer];
+              newCorrectAnswers[index] = {
+                ...newCorrectAnswers[index],
+                type: e.target.value,
+              };
+              return { ...prev, correctAnswer: newCorrectAnswers };
+            })
+          }
+          className="ml-2 p-1 border border-gray-300 rounded"
+        >
+          <option value="latex">LaTeX</option>
+          <option value="text">Text</option>
+        </select>
       </div>
     ));
+  };
+
+  // Function to dynamically render test answer fields
+  const renderTestAnswerFields = () => {
+    console.log("Rendering test answer fields with:", testAnswer);
+    if (!testAnswer || testAnswer.length === 0) {
+      return (
+        <div className="text-gray-500 flex items-center">
+          <math-field
+            ref={(el) => (testAnswerRefs.current[0] = el)}
+            className="mt-1 w-full p-3 border border-gray-300 rounded-md"
+            style={{ minHeight: "50px", minWidth: "100%" }}
+            onInput={handleTestInput(0)}
+            data-latex=""
+          ></math-field>
+          <select
+            value={testAnswer[0]?.type || "latex"}
+            onChange={(e) =>
+              setTestAnswer((prev) => {
+                const newTestAnswers = [...prev];
+                newTestAnswers[0] = {
+                  ...newTestAnswers[0],
+                  type: e.target.value,
+                };
+                return newTestAnswers;
+              })
+            }
+            className="ml-2 p-1 border border-gray-300 rounded"
+          >
+            <option value="latex">LaTeX</option>
+            <option value="text">Text</option>
+          </select>
+        </div>
+      );
+    }
+    return testAnswer.map((ans, index) => (
+      <div key={index} className="mb-2 flex items-center">
+        <math-field
+          ref={(el) => (testAnswerRefs.current[index] = el)}
+          className="mt-1 w-full p-3 border border-gray-300 rounded-md"
+          style={{ minHeight: "50px", minWidth: "100%" }}
+          onInput={handleTestInput(index)}
+          data-latex={ans.value}
+        >
+          {ans.value}
+        </math-field>
+        <select
+          value={ans.type || "latex"}
+          onChange={(e) =>
+            setTestAnswer((prev) => {
+              const newTestAnswers = [...prev];
+              newTestAnswers[index] = {
+                ...newTestAnswers[index],
+                type: e.target.value,
+              };
+              return newTestAnswers;
+            })
+          }
+          className="ml-2 p-1 border border-gray-300 rounded"
+        >
+          <option value="latex">LaTeX</option>
+          <option value="text">Text</option>
+        </select>
+      </div>
+    ));
+  };
+
+  const handleAddTestAnswer = () => {
+    setTestAnswer((prev) => [...prev, { value: "", type: "latex" }]);
+    testAnswerRefs.current = [...testAnswerRefs.current, null];
   };
 
   const handleChange = (e) => {
@@ -468,6 +651,24 @@ function AddQuestion() {
   const selectedKnowledgePoints = formData.knowledgePointIds
     .map((id) => knowledgePoints.find((kp) => kp.id === id))
     .filter((kp) => kp);
+
+  // Enable "Verify Answer" button when correctAnswer and testAnswer are not empty
+  useEffect(() => {
+    const hasCorrectAnswers = formData.correctAnswer.some((ans) => ans.value);
+    const hasTestAnswers = testAnswer.some((ans) => ans.value);
+    const isDisabled = verifyLoading || !hasCorrectAnswers || !hasTestAnswers;
+    console.log(
+      "Verify button disabled state:",
+      isDisabled,
+      "Correct Answers:",
+      hasCorrectAnswers,
+      "Test Answers:",
+      hasTestAnswers
+    );
+    if (verifyAnswerButtonRef.current) {
+      verifyAnswerButtonRef.current.disabled = isDisabled;
+    }
+  }, [formData.correctAnswer, testAnswer, verifyLoading]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8 flex items-center justify-center">
@@ -628,10 +829,46 @@ function AddQuestion() {
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              {t("Correct Answer")}{" "}
-              <span className="text-gray-500">{t("(optional)")}</span>
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="block text-sm font-medium text-gray-700">
+                {t("Correct Answer(s)")}{" "}
+                <span className="text-gray-500">{t("(optional)")}</span>
+              </label>
+              <span className="text-sm text-gray-700">
+                {t("Correct Answer Relationship:")}
+                <input
+                  type="radio"
+                  name="correctAnswerRelationship"
+                  value="and"
+                  checked={formData.correctAnswerRelationship === "and"}
+                  onChange={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      correctAnswerRelationship: "and",
+                    }))
+                  }
+                  className="mr-2"
+                />
+                {t("And (all must be correct)  ")}
+                <input
+                  type="radio"
+                  name="correctAnswerRelationship"
+                  value="or"
+                  checked={
+                    !formData.correctAnswerRelationship ||
+                    formData.correctAnswerRelationship === "or"
+                  }
+                  onChange={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      correctAnswerRelationship: "or",
+                    }))
+                  }
+                  className="mr-2"
+                />
+                {t("Or (any one is correct)")}
+              </span>
+            </div>
             {renderCorrectAnswerFields()}
             <button
               type="button"
@@ -641,41 +878,45 @@ function AddQuestion() {
               {t("Add Another Correct Answer")}
             </button>
           </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              {t("Test Answer")}
+              {t("Test Answer(s)")}
             </label>
-            <math-field
-              ref={testAnswerMathFieldRef}
-              className="mt-1 w-full p-3 border border-gray-300 rounded-md"
-              style={{ minHeight: "50px", minWidth: "100%" }}
-              disabled={verifyLoading}
-            >
-              {testAnswer}
-            </math-field>
+            {renderTestAnswerFields()}
             <button
               type="button"
-              onClick={handleVerifyAnswer}
-              disabled={
-                verifyLoading ||
-                !formData.correctAnswer.some((ans) => ans.value)
-              }
-              className="mt-2 w-full py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-green-500"
+              onClick={handleAddTestAnswer}
+              className="mt-2 py-2 px-4 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
             >
-              {verifyLoading ? t("Verifying...") : t("Verify Answer")}
+              {t("Add Another Test Answer")}
             </button>
-            {answerFeedback && (
-              <p
-                className={`mt-2 text-sm ${
-                  answerFeedback.includes("correct")
-                    ? "text-green-600"
-                    : "text-red-600"
-                }`}
-              >
-                {answerFeedback}
-              </p>
-            )}
           </div>
+
+          <button
+            ref={verifyAnswerButtonRef}
+            type="button"
+            onClick={handleVerifyAnswer}
+            disabled={
+              verifyLoading ||
+              !formData.correctAnswer.some((ans) => ans.value) ||
+              !testAnswer.some((ans) => ans.value)
+            }
+            className="mt-2 w-full py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-green-500"
+          >
+            {verifyLoading ? t("Verifying...") : t("Verify Answer")}
+          </button>
+          {answerFeedback && (
+            <p
+              className={`mt-2 text-sm ${
+                answerFeedback.includes("correct")
+                  ? "text-green-600"
+                  : "text-red-600"
+              }`}
+            >
+              {answerFeedback}
+            </p>
+          )}
           <button
             type="submit"
             disabled={loading}
