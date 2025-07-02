@@ -443,7 +443,7 @@ function AddQuestion() {
           <math-field
             ref={(el) => (correctAnswerRefs.current[0] = el)}
             className="mt-1 w-full p-3 border border-gray-300 rounded-md"
-            style={{ minHeight: "50px", minWidth: "100%" }}
+            style={{ minHeight: "50px", minWidth: "90%" }}
             onInput={handleCorrectInput(0)}
             data-latex=""
           ></math-field>
@@ -472,7 +472,7 @@ function AddQuestion() {
         <math-field
           ref={(el) => (correctAnswerRefs.current[index] = el)}
           className="mt-1 w-full p-3 border border-gray-300 rounded-md"
-          style={{ minHeight: "50px", minWidth: "100%" }}
+          style={{ minHeight: "50px", minWidth: "90%" }}
           onInput={handleCorrectInput(index)}
           data-latex={ans.value}
         >
@@ -508,7 +508,7 @@ function AddQuestion() {
           <math-field
             ref={(el) => (testAnswerRefs.current[0] = el)}
             className="mt-1 w-full p-3 border border-gray-300 rounded-md"
-            style={{ minHeight: "50px", minWidth: "100%" }}
+            style={{ minHeight: "50px", minWidth: "90%" }}
             onInput={handleTestInput(0)}
             data-latex=""
           ></math-field>
@@ -537,7 +537,7 @@ function AddQuestion() {
         <math-field
           ref={(el) => (testAnswerRefs.current[index] = el)}
           className="mt-1 w-full p-3 border border-gray-300 rounded-md"
-          style={{ minHeight: "50px", minWidth: "100%" }}
+          style={{ minHeight: "50px", minWidth: "90%" }}
           onInput={handleTestInput(index)}
           data-latex={ans.value}
         >
