@@ -72,17 +72,32 @@ const parseContentToSegments = (htmlContent) => {
       node.nodeType,
       node.nodeValue
     );
+    console.log("node:", node);
+    console.log("segments start:", segments); // Debug log
+
     if (node.nodeType === Node.ELEMENT_NODE && node.nodeName === "P") {
-      segments.push({ value: "", type: "newline", original_latex: null });
+      //segments.push({ value: "", type: "newline", original_latex: null });
       console.log("node.textContent:", node.textContent);
 
       const text = node.textContent.trim();
-      if (text)
+      if (text && text.length > 0) {
+        console.log("Adding text segment1:", "[", text, "]", text.length);
+        segments.push({ value: "", type: "newline", original_latex: null });
         segments.push({ value: text, type: "text", original_latex: null });
+      }else{
+        if (
+          node.childNodes &&
+          node.childNodes.length == 1 &&
+          node.childNodes[0].nodeName &&
+          node.childNodes[0].nodeName.lower() === "br".lower()
+        ){
+          segments.push({ value: "", type: "newline", original_latex: null });
+        }
+      }
     } else if (node.nodeType === Node.TEXT_NODE) {
       const text = node.textContent.trim();
-      if (text)
-        segments.push({ value: text, type: "text", original_latex: null });
+      if (text && text.length > 0) console.log("Adding text segment2:", text);
+      segments.push({ value: text, type: "text", original_latex: null });
     } else if (node.nodeName === "MATH-FIELD") {
       const value = node.getAttribute("data-latex") || node.textContent;
       segments.push({
@@ -103,10 +118,15 @@ const parseContentToSegments = (htmlContent) => {
       console.log("node.textContent:", node.textContent);
 
       const text = node.textContent.trim();
-      if (text)
+      if (text && text.length > 0) {
+        console.log("Adding text segment3:", text);
         segments.push({ value: text, type: "text", original_latex: null });
+      }
     }
+
+    console.log("segments end:", segments); // Debug log
   });
+
   console.log("Parsed segments:", segments); // Debug log
   return segments;
 };
