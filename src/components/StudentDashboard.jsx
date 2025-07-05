@@ -6,10 +6,11 @@ import { useClassrooms } from "../context/ClassroomContext";
 import { useTranslation } from "react-i18next";
 import { ClipLoader } from "react-spinners";
 import { showToast } from "../utils/toast";
+import Navigation from "./Navigation"; // Adjusted path
 
 function StudentDashboard() {
   const { t } = useTranslation();
-  const { user, logout } = useAuth();
+  const { user } = useAuth(); // Remove logout since it's in Navigation
   const { classrooms } = useClassrooms();
   const [tutor, setTutor] = useState(null);
   const [assignments, setAssignments] = useState([]);
@@ -60,16 +61,9 @@ function StudentDashboard() {
   const classroom = classrooms?.find((c) => user.classroomIds?.includes(c.id));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8">
-      <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6 sm:p-8">
-        <div className="mb-6 text-right">
-          <button
-            onClick={logout}
-            className="text-indigo-600 hover:text-indigo-800 font-medium text-body-md"
-          >
-            {t("logout")}
-          </button>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <Navigation />
+      <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6 sm:p-8 mt-4">
         <h1 className="text-heading-lg font-extrabold text-center text-gray-800 mb-6">
           {t("welcome", { name: user.name })}
         </h1>

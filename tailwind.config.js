@@ -6,6 +6,14 @@ module.exports = {
   ],
   theme: {
     extend: {
+      colors: {
+        "primary-gradient-from": "#2E86AB",
+        "primary-gradient-to": "#FFD166",
+        accent: "#FF6B6B",
+      },
+      fontFamily: {
+        sans: ["Poppins", "sans-serif"],
+      },
       fontSize: {
         // Headings
         "heading-lg": ["1.875rem", { lineHeight: "2.25rem" }], // ~30px, equivalent to text-3xl
@@ -23,3 +31,4 @@ module.exports = {
   },
   plugins: [],
 };
+
