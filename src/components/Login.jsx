@@ -22,17 +22,14 @@ const Login = () => {
     e.preventDefault();
     console.log("Attempting login with credentials:", credentials);
     try {
-      // Await the login call to get the resolved response
       const response = await login(credentials.email, credentials.password);
       console.log("Login successful, response data:", response);
 
-      // The login function in AuthContext already stores token and user
       const { user } = response;
       if (!user) {
         throw new Error("Invalid login response: missing user data");
       }
 
-      // Redirect based on role
       if (user.role === "student") {
         navigate("/student-dashboard");
       } else if (user.role === "tutor") {
@@ -92,7 +89,10 @@ const Login = () => {
               placeholder={t("enter_password")}
             />
           </div>
-          <button type="submit" className="fancy-button w-full">
+          <button
+            type="submit"
+            className="fancy-button w-full min-h-[40px]" // Added min-height for debug
+          >
             {t("login")}
           </button>
         </form>

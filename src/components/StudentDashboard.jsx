@@ -61,21 +61,32 @@ function StudentDashboard() {
   const classroom = classrooms?.find((c) => user.classroomIds?.includes(c.id));
 
   return (
+    
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <Navigation />
       <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6 sm:p-8 mt-4">
-        <h1 className="text-heading-lg font-extrabold text-center text-gray-800 mb-6">
-          {t("welcome", { name: user.name })}
-        </h1>
-        <div className="mb-6">
-          <p className="text-body-md text-gray-800">
-            <span className="font-medium">{t("classroom")}:</span>{" "}
-            {classroom?.name || t("none")}
-          </p>
-          <p className="text-body-md text-gray-800">
-            <span className="font-medium">{t("tutor")}:</span>{" "}
-            {tutor?.name || t("none")}
-          </p>
+        <div className="bg-gray-50 p-4 rounded-lg shadow-inner text-center">
+          {" "}
+          {/* Fancy card for welcome */}
+          <h1 className="text-heading-lg font-extrabold text-gray-800 mb-2">
+            {t("welcome", { name: user.name })}
+          </h1>
+        </div>
+        <div className="mb-6 mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {" "}
+          {/* Grid for info */}
+          <div className="bg-gray-100 p-3 rounded-lg shadow">
+            <p className="text-body-md text-gray-800">
+              <span className="font-medium">{t("classroom")}:</span>{" "}
+              {classroom?.name || t("none")}
+            </p>
+          </div>
+          <div className="bg-gray-100 p-3 rounded-lg shadow">
+            <p className="text-body-md text-gray-800">
+              <span className="font-medium">{t("tutor")}:</span>{" "}
+              {tutor?.name || t("none")}
+            </p>
+          </div>
         </div>
         <div>
           <h2 className="text-subheading font-semibold text-gray-800 mb-4">
@@ -97,23 +108,26 @@ function StudentDashboard() {
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-gray-100">
-                    <th className="p-2 text-left text-body-md font-semibold text-gray-800">
+                    <th className="p-2 text-left text-body-md font-semibold text-gray-800 border-b-2 border-gray-300">
                       {t("assignment_id")}
                     </th>
-                    <th className="p-2 text-left text-body-md font-semibold text-gray-800">
+                    <th className="p-2 text-left text-body-md font-semibold text-gray-800 border-b-2 border-gray-300">
                       {t("questions")}
                     </th>
-                    <th className="p-2 text-left text-body-md font-semibold text-gray-800">
+                    <th className="p-2 text-left text-body-md font-semibold text-gray-800 border-b-2 border-gray-300">
                       {t("created_at")}
                     </th>
-                    <th className="p-2 text-left text-body-md font-semibold text-gray-800">
+                    <th className="p-2 text-left text-body-md font-semibold text-gray-800 border-b-2 border-gray-300">
                       {t("action")}
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   {assignments.map((assignment) => (
-                    <tr key={assignment.id} className="border-t">
+                    <tr
+                      key={assignment.id}
+                      className="border-t hover:bg-gray-50 transition-colors"
+                    >
                       <td className="p-2 text-body-md text-gray-800">
                         {assignment.id}
                       </td>
@@ -141,7 +155,7 @@ function StudentDashboard() {
         <div className="mt-6 text-center">
           <Link
             to="/performance-analysis"
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-body-md"
+            className="fancy-button" // Use fancy-button for gradient effect
           >
             {t("view_performance")}
           </Link>
