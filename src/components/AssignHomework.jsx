@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { getUsersByTutor, getQuestions, createAssignment } from "../services/api";
+import {
+  getUsersByTutor,
+  getQuestions,
+  createAssignment,
+} from "../services/api";
 import { showToast } from "../utils/toast";
 import { ClipLoader } from "react-spinners";
 import { useAuth } from "../context/AuthContext";
+import Navigation from "./Navigation"; // Updated path
 
 const AssignHomework = () => {
   const { t } = useTranslation();
@@ -100,24 +105,25 @@ const AssignHomework = () => {
   if (error) return <div>{error}</div>;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8 flex items-center justify-center">
-      <div className="max-w-3xl w-full bg-white rounded-xl shadow-md p-6 sm:p-8">
-        <Link
-          to="/tutor-dashboard"
-          className="text-indigo-600 hover:text-indigo-800 font-medium text-body-md mb-4 inline-block"
-        >
-          {t("back_to_dashboard")}
-        </Link>
-        <h2 className="text-heading-lg mb-6">{t("assign_homework")}</h2>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <Navigation />
+      <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6 sm:p-8 mt-4">
+        <div className="bg-gray-50 p-4 rounded-lg shadow-inner text-center">
+          {" "}
+          {/* Fancy card for header */}
+          <h2 className="text-heading-lg mb-2">{t("assign_homework")}</h2>
+        </div>
         {loading ? (
           <div className="flex justify-center">
             <ClipLoader color="#2563eb" size={50} />
           </div>
         ) : (
           <>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-body-md">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="bg-gray-100 p-4 rounded-lg shadow">
+                {" "}
+                {/* Fancy card for student select */}
+                <label className="block text-body-md font-medium text-gray-700">
                   {t("select_students")}
                 </label>
                 <select
@@ -125,7 +131,7 @@ const AssignHomework = () => {
                   multiple
                   value={formData.studentIds}
                   onChange={handleChange}
-                  className="border rounded p-2 w-full"
+                  className="border rounded p-2 w-full mt-2"
                 >
                   {students.map((student) => (
                     <option key={student.id} value={student.id}>
@@ -134,15 +140,17 @@ const AssignHomework = () => {
                   ))}
                 </select>
               </div>
-              <div>
-                <label className="block text-body-md">
+              <div className="bg-gray-100 p-4 rounded-lg shadow">
+                {" "}
+                {/* Fancy card for question select */}
+                <label className="block text-body-md font-medium text-gray-700">
                   {t("select_questions")}
                 </label>
                 <select
                   multiple
                   value={formData.questionIds}
                   onChange={handleMultiSelect}
-                  className="border rounded p-2 w-full"
+                  className="border rounded p-2 w-full mt-2"
                 >
                   {questions.map((question) => (
                     <option key={question.id} value={question.id}>
@@ -153,7 +161,7 @@ const AssignHomework = () => {
               </div>
               <button
                 type="submit"
-                className="bg-indigo-500 text-white px-4 py-2 rounded"
+                className="fancy-button w-full" // Use fancy-button for gradient effect
                 disabled={loading}
               >
                 {t("create_assignment")}

@@ -6,10 +6,11 @@ import { useClassrooms } from "../context/ClassroomContext";
 import { ClipLoader } from "react-spinners";
 import { showToast } from "../utils/toast";
 import { useTranslation } from "react-i18next";
+import Navigation from "./Navigation"; // Adjusted path
 
 function TutorDashboard() {
   const { t } = useTranslation();
-  const { user, logout } = useAuth();
+  const { user } = useAuth(); // Remove logout since it's in Navigation
   const { classrooms } = useClassrooms();
   const [students, setStudents] = useState([]);
   const [assignments, setAssignments] = useState([]);
@@ -52,10 +53,6 @@ function TutorDashboard() {
     fetchStudentsAndAssignments();
   }, [user, t]);
 
-  const handleRefresh = () => {
-    setTimeout(fetchStudentsAndAssignments, 1000); // Delay to avoid rapid retries
-  };
-
   if (!user || user.role !== "tutor") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8">
@@ -69,28 +66,21 @@ function TutorDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8">
-      <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6 sm:p-8">
-        <h1 className="text-heading-lg font-extrabold text-center text-gray-800 mb-8">
-          {t("welcome_tutor", { name: user.name })}
-        </h1>
-        <div className="mb-6 text-center">
-          <button
-            onClick={logout}
-            className="text-indigo-600 hover:text-indigo-800 font-medium text-body-md"
-          >
-            {t("logout")}
-          </button>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <Navigation />
+      <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6 sm:p-8 mt-4">
+        <div className="bg-gray-50 p-4 rounded-lg shadow-inner text-center">
+          {" "}
+          {/* Fancy card for welcome */}
+          <h1 className="text-heading-lg font-extrabold text-gray-800 mb-2">
+            {t("welcome_tutor", { name: user.name })}
+          </h1>
         </div>
         {error && (
-          <div className="mb-4 text-center">
+          <div className="mb-4 text-center bg-red-50 p-3 rounded-lg shadow">
+            {" "}
+            {/* Fancy error card */}
             <p className="text-red-600 text-body-md">{error}</p>
-            <button
-              onClick={handleRefresh}
-              className="mt-2 text-indigo-600 hover:text-indigo-800 font-medium text-body-md"
-            >
-              {t("retry_fetch")}
-            </button>
           </div>
         )}
         {loading ? (
@@ -112,23 +102,26 @@ function TutorDashboard() {
                   <table className="w-full border-collapse">
                     <thead>
                       <tr className="bg-gray-100">
-                        <th className="p-2 text-left text-body-md font-semibold text-gray-800">
+                        <th className="p-2 text-left text-body-md font-semibold text-gray-800 border-b-2 border-gray-300">
                           {t("name")}
                         </th>
-                        <th className="p-2 text-left text-body-md font-semibold text-gray-800">
+                        <th className="p-2 text-left text-body-md font-semibold text-gray-800 border-b-2 border-gray-300">
                           {t("email")}
                         </th>
-                        <th className="p-2 text-left text-body-md font-semibold text-gray-800">
+                        <th className="p-2 text-left text-body-md font-semibold text-gray-800 border-b-2 border-gray-300">
                           {t("classroom")}
                         </th>
-                        <th className="p-2 text-left text-body-md font-semibold text-gray-800">
+                        <th className="p-2 text-left text-body-md font-semibold text-gray-800 border-b-2 border-gray-300">
                           {t("assignments")}
                         </th>
                       </tr>
                     </thead>
                     <tbody>
                       {students.map((student) => (
-                        <tr key={student.id} className="border-t">
+                        <tr
+                          key={student.id}
+                          className="border-t hover:bg-gray-50 transition-colors"
+                        >
                           <td className="p-2 text-body-md text-gray-800">
                             {student.name}
                           </td>
@@ -157,7 +150,7 @@ function TutorDashboard() {
             <div className="mt-6 text-center">
               <Link
                 to="/assign-homework"
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg text-body-md"
+                className="fancy-button" // Use fancy-button for gradient effect
               >
                 {t("assign_homework")}
               </Link>

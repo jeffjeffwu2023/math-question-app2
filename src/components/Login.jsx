@@ -49,7 +49,7 @@ const Login = () => {
     <div className="min-h-screen bg-[var(--primary-gradient)] flex items-center justify-center p-4">
       <div className="fancy-card animate-fadeIn">
         <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">
-          Student Login
+          Login
         </h2>
         {error && <p className="text-red-500 text-center mb-4">{error}</p>}
         <form onSubmit={handleLogin} className="space-y-4">
