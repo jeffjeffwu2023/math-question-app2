@@ -132,6 +132,14 @@ function App() {
           }
         />
         <Route
+          path="/assign-homework/review"
+          element={
+            <ProtectedRoute allowedRole={["admin", "tutor"]}>
+              <AssignHomework />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/answer-homework/:assignmentId"
           element={
             <ProtectedRoute allowedRole="student">

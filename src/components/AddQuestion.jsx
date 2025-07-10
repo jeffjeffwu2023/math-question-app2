@@ -89,7 +89,7 @@ const parseContentToSegments = (htmlContent) => {
           node.childNodes &&
           node.childNodes.length == 1 &&
           node.childNodes[0].nodeName &&
-          node.childNodes[0].nodeName.lower() === "br".lower()
+          node.childNodes[0].nodeName.toLowerCase() === "br".toLowerCase()
         ){
           segments.push({ value: "", type: "newline", original_latex: null });
         }

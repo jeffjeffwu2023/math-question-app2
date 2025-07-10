@@ -28,8 +28,8 @@ const Navigation = () => {
 
   return (
     <nav className="bg-primary-gradient sticky top-0 z-50 shadow-md min-h-[64px]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between py-1">
-        <div className="flex items-center space-x-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between py-1 h-[64px]">
+        <div className="flex items-center space-x-4 h-full">
           {navItems.map((item) => (
             <Link
               key={item.path}
@@ -55,6 +55,6 @@ const Navigation = () => {
       </div>
     </nav>
   );
-};
-
+}
+  
 export default Navigation;
