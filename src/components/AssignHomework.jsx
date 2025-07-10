@@ -248,7 +248,7 @@ const AssignHomework = () => {
     setIncludedStudents((prev) => {
       const newIncluded = { ...prev, [studentId]: !prev[studentId] };
       const selectedIds = students
-        .filter((s) => newIncluded[s.id] !== false)
+        .filter((s) => newIncluded[s.id] === true) // Only include when explicitly true
         .map((s) => s.id);
       setFormData((prev) => ({ ...prev, studentIds: selectedIds }));
       console.log("Updated formData.studentIds:", selectedIds);
@@ -259,23 +259,23 @@ const AssignHomework = () => {
   const handleSelectAll = () => {
     const allStudentIds = students.map((s) => s.id);
     setFormData((prev) => ({ ...prev, studentIds: allStudentIds }));
-    setIncludedStudents(
-      students.reduce((acc, s) => ({ ...acc, [s.id]: true }), {})
+    const newIncludedStudents = students.reduce(
+      (acc, s) => ({ ...acc, [s.id]: true }),
+      {}
+    );
+    setIncludedStudents(newIncludedStudents);
+    setRenderTrigger((prev) => prev + 1); // Force re-render to sync checkboxes
+    console.log(
+      "Selected all students, new includedStudents:",
+      newIncludedStudents
     );
   };
 
   const handleDeselectAll = () => {
     setFormData((prev) => ({ ...prev, studentIds: [] }));
     setIncludedStudents({});
-  };
-
-  const handleRemoveAllSelected = () => {
-    setFormData((prev) => ({ ...prev, studentIds: [] }));
-    setIncludedStudents((prev) =>
-      Object.fromEntries(
-        Object.entries(prev).map(([id, included]) => [id, included])
-      )
-    ); // Preserve inclusion/exclusion state, just remove from formData
+    setRenderTrigger((prev) => prev + 1); // Force re-render to sync checkboxes
+    console.log("Deselected all students, includedStudents cleared");
   };
 
   const handleQuestionSelect = (questionId) => {
@@ -474,12 +474,6 @@ const AssignHomework = () => {
               >
                 {t("deselect_all")}
               </button>
-              <button
-                onClick={handleRemoveAllSelected}
-                className="px-2 py-1 bg-yellow-600 text-white rounded text-xs hover:bg-yellow-700 transition-colors"
-              >
-                {t("remove_all_selected")}
-              </button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-1">
               {students.map((student) => (
@@ -489,7 +483,7 @@ const AssignHomework = () => {
                 >
                   <input
                     type="checkbox"
-                    checked={includedStudents[student.id] !== false}
+                    checked={includedStudents[student.id] === true} // Only checked if explicitly true
                     onChange={() => handleStudentToggle(student.id)}
                     className="mr-1"
                   />

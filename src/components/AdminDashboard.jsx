@@ -8,6 +8,7 @@ import QuestionEditor from "./QuestionEditor";
 import TutorManagement from "./TutorManagement";
 import { useAuth } from "../context/AuthContext";
 import { useTranslation } from "react-i18next";
+import Navigation from "./Navigation";
 
 const AdminDashboard = () => {
   const { t } = useTranslation();
@@ -30,19 +31,12 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8">
-      <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6 sm:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-0 pr-4 pb-4 pl-4 sm:pr-6 sm:pb-6 sm:pl-6 md:pr-8 md:pb-8 md:pl-8">
+      <Navigation />
+      <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6 sm:p-8 mt-8">
         <h1 className="text-heading-lg font-extrabold text-center text-gray-800 mb-8">
           {t("welcome_admin", { name: user.name })}
         </h1>
-        <div className="mb-6 text-center">
-          <button
-            onClick={handleLogout}
-            className="text-indigo-600 hover:text-indigo-800 font-medium text-body-md"
-          >
-            {t("logout")}
-          </button>
-        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Link
             to="/admin/add-question"
@@ -105,7 +99,6 @@ const AdminDashboard = () => {
             <p className="text-body-md text-gray-600">{t("manage_courses")}</p>
           </Link>
         </div>
-        
       </div>
     </div>
   );

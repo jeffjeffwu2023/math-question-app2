@@ -4,6 +4,7 @@ import { getUsers, addUser, assignStudents } from "../services/api";
 import { showToast } from "../utils/toast";
 import { useTranslation } from "react-i18next";
 import { v4 as uuidv4 } from "uuid";
+import Navigation from "./Navigation";
 
 const TutorManagement = () => {
   const { t } = useTranslation();
@@ -121,14 +122,9 @@ const TutorManagement = () => {
   if (error) return <div>{error}</div>;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8 flex items-center justify-center">
-      <div className="max-w-3xl w-full bg-white rounded-xl shadow-md p-6 sm:p-8">
-        <Link
-          to="/admin-dashboard"
-          className="text-indigo-600 hover:text-indigo-800 font-medium text-body-md mb-4 inline-block"
-        >
-          {t("back_to_dashboard")}
-        </Link>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-0 pr-4 pb-4 pl-4 sm:pr-6 sm:pb-6 sm:pl-6 md:pr-8 md:pb-8 md:pl-8">
+      <Navigation />
+      <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6 sm:p-8 mt-8">
         <h2 className="text-heading-lg mb-6">{t("tutor_management")}</h2>
         {loading ? (
           <p>Loading...</p>

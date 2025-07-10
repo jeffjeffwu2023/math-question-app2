@@ -20,6 +20,21 @@ const Navigation = () => {
         { path: "/tutor-dashboard", label: t("dashboard") },
         { path: "/assign-homework", label: t("assign_homework") },
       ];
+    } else if (user?.role === "admin") {
+      return [
+        { path: "/admin/add-question", label: t("add_question") },
+        { path: "/admin/user-management", label: t("user_management") },
+        { path: "/admin/tutor-management", label: t("tutor_management") },
+        {
+          path: "/admin/knowledge-points",
+          label: t("knowledge_point_management"),
+        },
+        {
+          path: "/admin/classroom-management",
+          label: t("classroom_management"),
+        },
+        { path: "/admin/courses", label: t("course_management") },
+      ];
     }
     return []; // Default to empty for other roles or unauthenticated users
   };
@@ -55,6 +70,6 @@ const Navigation = () => {
       </div>
     </nav>
   );
-}
-  
+};
+
 export default Navigation;
