@@ -1,42 +1,24 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getUsers, addUser, assignStudents } from "../services/api";
+import { getUsers, softDeleteUser } from "../services/api"; // Updated import
 import { showToast } from "../utils/toast";
 import { useTranslation } from "react-i18next";
-import { v4 as uuidv4 } from "uuid";
 import Navigation from "./Navigation";
 
 const TutorManagement = () => {
   const { t } = useTranslation();
   const [tutors, setTutors] = useState([]);
-  const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    id: "",
-    name: "",
-    email: "",
-    password: "",
-    role: "tutor",
-    language: "en",
-    studentIds: [],
-    classroomIds: [],
-  });
-  const [assignmentData, setAssignmentData] = useState({
-    tutorId: "",
-    studentIds: [],
-  });
   const [error, setError] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedTutorId, setSelectedTutorId] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [tutorRes, studentRes] = await Promise.all([
-          getUsers({ role: "tutor" }),
-          getUsers({ role: "student" }),
-        ]);
+        const tutorRes = await getUsers({ role: "tutor", disabled: false }); // Filter out disabled tutors
         setTutors(tutorRes.data);
-        setStudents(studentRes.data);
       } catch (error) {
         showToast(t("failed_to_fetch_data"), "error");
         console.error("Error fetching data:", error);
@@ -48,74 +30,23 @@ const TutorManagement = () => {
     fetchData();
   }, [t]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleRemoveTutor = (tutorId) => {
+    setSelectedTutorId(tutorId);
+    setShowModal(true);
   };
 
-  const handleAssignmentChange = (e) => {
-    const { name, value } = e.target;
-    if (name === "studentIds") {
-      const options = Array.from(
-        e.target.selectedOptions,
-        (option) => option.value
-      );
-      setAssignmentData((prev) => ({ ...prev, studentIds: options }));
-    } else {
-      setAssignmentData((prev) => ({ ...prev, [name]: value }));
-    }
-  };
-
-  const handleAddTutor = async (e) => {
-    e.preventDefault();
-    const tutorData = {
-      id: uuidv4(),
-      name: formData.name,
-      email: formData.email,
-      password: formData.password,
-      role: "tutor",
-      language: formData.language,
-      studentIds: [],
-      classroomIds: formData.classroomIds || [],
-    };
-    try {
-      await addUser(tutorData);
-      showToast(t("tutor_added_successfully"), "success");
-      setFormData({
-        id: "",
-        name: "",
-        email: "",
-        password: "",
-        role: "tutor",
-        language: "en",
-        studentIds: [],
-        classroomIds: [],
-      });
-      const response = await getUsers({ role: "tutor" });
-      setTutors(response.data);
-    } catch (error) {
-      const errorMsg = error.response?.data?.detail || t("failed_to_add_tutor");
-      showToast(errorMsg, "error");
-    }
-  };
-
-  const handleAssignStudents = async (e) => {
-    e.preventDefault();
-    if (!assignmentData.tutorId || assignmentData.studentIds.length === 0) {
-      showToast(t("select_tutor_and_students"), "error");
-      return;
-    }
-    try {
-      await assignStudents(assignmentData);
-      showToast(t("students_assigned_successfully"), "success");
-      setAssignmentData({ tutorId: "", studentIds: [] });
-      // Refresh tutors to reflect updated studentIds
-      const response = await getUsers({ role: "tutor" });
-      setTutors(response.data);
-    } catch (error) {
-      const errorMsg =
-        error.response?.data?.detail || t("failed_to_assign_students");
-      showToast(errorMsg, "error");
+  const confirmRemoveTutor = async () => {
+    if (selectedTutorId) {
+      try {
+        await softDeleteUser(selectedTutorId); // Use softDeleteUser
+        showToast(t("tutor_removed_successfully"), "success");
+        setTutors(tutors.filter((tutor) => tutor.id !== selectedTutorId));
+        setShowModal(false);
+        setSelectedTutorId(null);
+      } catch (error) {
+        showToast(t("failed_to_remove_tutor"), "error");
+        console.error("Error removing tutor:", error);
+      }
     }
   };
 
@@ -125,134 +56,88 @@ const TutorManagement = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-0 pr-4 pb-4 pl-4 sm:pr-6 sm:pb-6 sm:pl-6 md:pr-8 md:pb-8 md:pl-8">
       <Navigation />
       <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6 sm:p-8 mt-8">
-        <h2 className="text-heading-lg mb-6">{t("tutor_management")}</h2>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-heading-lg">{t("tutor_management")}</h2>
+          <div className="space-x-4">
+            <Link
+              to="/admin/tutor-management/add"
+              className="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 transition-colors"
+            >
+              {t("add_tutor")}
+            </Link>
+            <Link
+              to="/admin/tutor-management/assign"
+              className="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 transition-colors"
+            >
+              {t("assign_students")}
+            </Link>
+          </div>
+        </div>
         {loading ? (
           <p>Loading...</p>
         ) : (
           <>
             <div className="mb-8">
-              <h3 className="text-heading-md mb-4">{t("add_tutor")}</h3>
-              <form onSubmit={handleAddTutor} className="space-y-4">
-                <div>
-                  <label className="block text-body-md">{t("name")}</label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    className="border rounded p-2 w-full"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-body-md">{t("email")}</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className="border rounded p-2 w-full"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-body-md">{t("password")}</label>
-                  <input
-                    type="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    className="border rounded p-2 w-full"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-body-md">{t("language")}</label>
-                  <select
-                    name="language"
-                    value={formData.language}
-                    onChange={handleChange}
-                    className="border rounded p-2 w-full"
-                  >
-                    <option value="en">English</option>
-                    <option value="zh">Chinese</option>
-                  </select>
-                </div>
-                <button
-                  type="submit"
-                  className="bg-indigo-500 text-white px-4 py-2 rounded"
-                >
-                  {t("add_tutor")}
-                </button>
-              </form>
-            </div>
-            <div className="mb-8">
-              <h3 className="text-heading-md mb-4">{t("assign_students")}</h3>
-              <form onSubmit={handleAssignStudents} className="space-y-4">
-                <div>
-                  <label className="block text-body-md">
-                    {t("select_tutor")}
-                  </label>
-                  <select
-                    name="tutorId"
-                    value={assignmentData.tutorId}
-                    onChange={handleAssignmentChange}
-                    className="border rounded p-2 w-full"
-                    required
-                  >
-                    <option value="">{t("choose_tutor")}</option>
-                    {tutors.map((tutor) => (
-                      <option key={tutor.id} value={tutor.id}>
-                        {tutor.name} ({tutor.email})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-body-md">
-                    {t("select_students")}
-                  </label>
-                  <select
-                    name="studentIds"
-                    multiple
-                    value={assignmentData.studentIds}
-                    onChange={handleAssignmentChange}
-                    className="border rounded p-2 w-full"
-                  >
-                    {students.map((student) => (
-                      <option key={student.id} value={student.id}>
-                        {student.name} ({student.email})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <button
-                  type="submit"
-                  className="bg-indigo-500 text-white px-4 py-2 rounded"
-                >
-                  {t("assign_students")}
-                </button>
-              </form>
-            </div>
-            <div>
               <h3 className="text-heading-md mb-4">{t("tutor_list")}</h3>
               {tutors.length === 0 ? (
                 <p>{t("no_tutors_found")}</p>
               ) : (
-                <ul className="space-y-2">
-                  {tutors.map((tutor) => (
-                    <li key={tutor.id} className="border p-4 rounded">
-                      {tutor.name} ({tutor.email})
-                      <p className="text-body-md text-gray-600">
-                        {t("assigned_students")}:{" "}
-                        {tutor.studentIds?.length || 0}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
+                <table className="w-full border-collapse shadow-md">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="border p-2 text-left">{t("name")}</th>
+                      <th className="border p-2 text-left">{t("email")}</th>
+                      <th className="border p-2 text-left">
+                        {t("assigned_students")}
+                      </th>
+                      <th className="border p-2 text-left">{t("action")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tutors.map((tutor) => (
+                      <tr key={tutor.id} className="hover:bg-gray-50">
+                        <td className="border p-2">{tutor.name}</td>
+                        <td className="border p-2">{tutor.email}</td>
+                        <td className="border p-2">
+                          {tutor.studentIds?.length || 0}
+                        </td>
+                        <td className="border p-2">
+                          <button
+                            onClick={() => handleRemoveTutor(tutor.id)}
+                            className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 transition-colors"
+                          >
+                            {t("remove")}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               )}
             </div>
           </>
+        )}
+        {showModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg">
+              <h3 className="text-lg font-bold mb-4">{t("confirm_remove")}</h3>
+              <p>{t("are_you_sure_remove_tutor")}</p>
+              <div className="mt-4 flex justify-end space-x-4">
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="bg-gray-300 text-black px-4 py-2 rounded hover:bg-gray-400"
+                >
+                  {t("cancel")}
+                </button>
+                <button
+                  onClick={confirmRemoveTutor}
+                  className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                >
+                  {t("confirm_soft_delete")}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

@@ -20,6 +20,8 @@ import KnowledgePointManagement from "./components/KnowledgePointManagement";
 import ManagerManagement from "./components/ManagerManagement";
 import ClassroomChart from "./components/ClassroomChart";
 import LandingPage from "./components/LandingPage";
+import AddTutor from "./components/AddTutor"; // New component
+import AssignStudents from "./components/AssignStudents"; // Placeholder or new component
 
 function App() {
   return (
@@ -80,6 +82,22 @@ function App() {
           element={
             <ProtectedRoute allowedRole="admin">
               <TutorManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/tutor-management/add"
+          element={
+            <ProtectedRoute allowedRole="admin">
+              <AddTutor />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/tutor-management/assign"
+          element={
+            <ProtectedRoute allowedRole="admin">
+              <AssignStudents />
             </ProtectedRoute>
           }
         />
