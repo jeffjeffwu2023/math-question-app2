@@ -9,7 +9,7 @@ API.interceptors.request.use(
   (config) => {
     let token = localStorage.getItem("token");
     if (!token) {
-      token = localStorage.getItem("authToken"); // Fallback key
+      token = localStorage.getItem("authToken");
     }
     console.log("Token being used for request:", token);
     if (token) {
@@ -43,61 +43,58 @@ API.interceptors.response.use(
 export const login = (email, password) => {
   console.log("Logging in with email:", email);
   console.log("Logging in with Password:", password);
-  return API.post("/api/auth/login", { email, password }); // Removed trailing slash
+  return API.post("/api/auth/login", { email, password });
 };
 
 // User endpoints
 export const getUsers = (filters = {}) =>
-  API.get("/api/users", { params: filters }); // Removed trailing slash
+  API.get("/api/users", { params: filters });
 export const getUsersByTutor = (tutor_id) =>
-  API.get(`/api/users/bytutor/${tutor_id}`); // Removed trailing slash
-export const addUser = (user) => API.post("/api/users", user); // Removed trailing slash
-export const updateUser = (id, user) => API.put(`/api/users/${id}`, user); // Removed trailing slash
-export const softDeleteUser = (id) => API.delete(`/api/users/${id}`); // Removed trailing slash
-export const assignParent = (data) =>
-  API.post("/api/users/assign-parent", data); // New endpoint
-export const assignStudent = (data) =>
-  API.post("/api/users/assign-student", data); // New endpoint
+  API.get(`/api/users/bytutor/${tutor_id}`);
+export const addUser = (user) => API.post("/api/users", user);
+export const updateUser = (id, user) => API.put(`/api/users/${id}`, user);
+export const softDeleteUser = (id) => API.delete(`/api/users/${id}`);
+export const assignParent = (data) => API.post("/api/users/assign-parent", data);
+export const assignStudent = (data) => API.post("/api/users/assign-student", data);
+export const assignStudents = (data) => API.post("/api/tutors/assign-students", data);
 
-// Tutor endpoints
-export const assignStudents = (data) =>
-  API.post("/api/tutors/assign-students", data);
+
 
 // Assignment endpoints
 export const createAssignment = (assignment) =>
-  API.post("/api/assignments", assignment); // Removed trailing slash
+  API.post("/api/assignments", assignment);
 export const getAssignments = (studentId) =>
-  API.get("/api/assignments", { params: { student_id: studentId } }); // Removed trailing slash
+  API.get("/api/assignments", { params: { student_id: studentId } });
 export const submitAssignment = (id) =>
-  API.put(`/api/assignments/submit/${id}`); // Removed trailing slash
+  API.put(`/api/assignments/submit/${id}`);
 
 // Question endpoints
-export const getQuestions = () => API.get("/api/questions"); // Removed trailing slash
-export const getQuestionById = (id) => API.get(`/api/questions/${id}`); // Removed trailing slash
-export const addQuestion = (question) => API.post("/api/questions", question); // Removed trailing slash
+export const getQuestions = () => API.get("/api/questions");
+export const getQuestionById = (id) => API.get(`/api/questions/${id}`);
+export const addQuestion = (question) => API.post("/api/questions", question);
 
 // Knowledge point endpoints
 export const getKnowledgePoints = (params = {}) =>
-  API.get("/api/knowledge-points", { params }); // Removed trailing slash
+  API.get("/api/knowledge-points", { params });
 export const addKnowledgePoint = (knowledgePoint) =>
-  API.post("/api/knowledge-points", knowledgePoint); // Removed trailing slash
+  API.post("/api/knowledge-points", knowledgePoint);
 export const updateKnowledgePoint = (id, knowledgePoint) =>
-  API.put(`/api/knowledge-points/${id}`, knowledgePoint); // Removed trailing slash
+  API.put(`/api/knowledge-points/${id}`, knowledgePoint);
 export const deleteKnowledgePoint = (id) =>
-  API.delete(`/api/knowledge-points/${id}`); // Removed trailing slash
+  API.delete(`/api/knowledge-points/${id}`);
 
 // Answer endpoints
-export const addAnswer = (answer) => API.post("/api/answers", answer); // Removed trailing slash
-export const evaluateAnswer = (prompt) => API.post("/api/ai/grok", { prompt }); // Removed trailing slash
+export const addAnswer = (answer) => API.post("/api/answers", answer);
+export const evaluateAnswer = (prompt) => API.post("/api/ai/grok", { prompt });
 export const saveAnswer = (questionId, answer, isCorrect) =>
-  API.post("/api/answers", { questionId, answer, isCorrect }); // Removed trailing slash
+  API.post("/api/answers", { questionId, answer, isCorrect });
 export const getAnswers = (studentId) =>
   API.get(`/api/answers${studentId ? `?student_id=${studentId}` : ""}`);
 
 // Performance endpoints
 export const performanceMetrics = (data) =>
-  API.post("/api/students/performance-metrics", data); // Removed trailing slash
-export const timeSpent = (data) => API.post("/api/students/time-spent", data); // Removed trailing slash
+  API.post("/api/students/performance-metrics", data);
+export const timeSpent = (data) => API.post("/api/students/time-spent", data);
 
 // AI APIs
 export const analyzeStudent = (
@@ -107,32 +104,32 @@ export const analyzeStudent = (
 ) =>
   API.post("/api/ai/analyze-student", studentData, {
     params: { target_audience: targetAudience, language },
-  }); // Removed trailing slash
+  });
 
 // Classroom endpoints
-export const getClassrooms = () => API.get("/api/classrooms"); // Removed trailing slash
+export const getClassrooms = () => API.get("/api/classrooms");
 export const createClassroom = (classroom) =>
-  API.post("/api/classrooms", classroom); // Removed trailing slash
+  API.post("/api/classrooms", classroom);
 export const updateClassroom = (id, classroom) =>
-  API.put(`/api/classrooms/${id}`, classroom); // Removed trailing slash
-export const deleteClassroom = (id) => API.delete(`/api/classrooms/${id}`); // Removed trailing slash
+  API.put(`/api/classrooms/${id}`, classroom);
+export const deleteClassroom = (id) => API.delete(`/api/classrooms/${id}`);
 
 // Manager endpoints
-export const assignManager = (manager) => API.post("/api/managers", manager); // Removed trailing slash
+export const assignManager = (manager) => API.post("/api/managers", manager);
 export const removeManager = (manager) =>
-  API.delete("/api/managers", { data: manager }); // Removed trailing slash
-export const getManagerAssignments = () => API.get("/api/managers"); // Removed trailing slash
+  API.delete("/api/managers", { data: manager });
+export const getManagerAssignments = () => API.get("/api/managers");
 
 // Course endpoints
-export const getCourses = () => API.get("/api/courses"); // Removed trailing slash
-export const createCourse = (course) => API.post("/api/courses", course); // Removed trailing slash
+export const getCourses = () => API.get("/api/courses");
+export const createCourse = (course) => API.post("/api/courses", course);
 export const updateCourse = (id, course) =>
-  API.put(`/api/courses/${id}`, course); // Removed trailing slash
-export const deleteCourse = (id) => API.delete(`/api/courses/${id}`); // Removed trailing slash
+  API.put(`/api/courses/${id}`, course);
+export const deleteCourse = (id) => API.delete(`/api/courses/${id}`);
 
 // Verify Answer
 export const verifyAnswer = (testAnswer) =>
-  API.post("/api/verify-answer", testAnswer); // Removed trailing slash
+  API.post("/api/verify-answer", testAnswer);
 
 // Generate Question
 export const generateQuestion = (criteria) =>
@@ -141,7 +138,7 @@ export const generateQuestion = (criteria) =>
       const result = JSON.parse(data);
       return result;
     },
-  }); // Removed trailing slash
+  });
 
 export { API };
 export default API;
