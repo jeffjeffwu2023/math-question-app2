@@ -1,4 +1,3 @@
-// AddQuestion.jsx
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -9,6 +8,7 @@ import QuestionPreview from "./QuestionPreview";
 import { useTranslation } from "react-i18next";
 import { useKnowledgePoints } from "../context/KnowledgePointContext";
 import { useAuth } from "../context/AuthContext";
+import Navigation from "./Navigation";
 import "mathlive";
 
 // Utility function to remove empty values from an array
@@ -19,9 +19,7 @@ const removeEmptyValues = (arr) => {
 };
 
 const removeEmptyLatexValues = (arr) => {
-  // log the input array for debugging
   console.log("Input array for removeEmptyLatexValues:", arr);
-  // log each item in the array
   arr.forEach((item, index) => {
     console.log(`Item ${index}:`, item);
   });
@@ -41,7 +39,7 @@ const formatNumber = (value) => {
   }
 };
 
-// Function to wrap LaTeX strings with <math-field> tags, centering single-line math expressions
+// Function to wrap LaTeX strings with <math-field> tags
 const wrapLatexWithMathField = (segments) => {
   return segments
     .map((segment) => {
@@ -56,10 +54,11 @@ const wrapLatexWithMathField = (segments) => {
     .join("");
 };
 
-// Function to parse HTML content back to segments (simplified)
+// Function to parse HTML content back to segments
 const parseContentToSegments = (htmlContent) => {
   console.log("htmlContent:", htmlContent);
-
+  
+  
   const tempDiv = document.createElement("div");
   tempDiv.innerHTML = htmlContent;
   const segments = [];
@@ -73,31 +72,37 @@ const parseContentToSegments = (htmlContent) => {
       node.nodeValue
     );
     console.log("node:", node);
-    console.log("segments start:", segments); // Debug log
+    console.log("segments start:", segments);
 
     if (node.nodeType === Node.ELEMENT_NODE && node.nodeName === "P") {
-      //segments.push({ value: "", type: "newline", original_latex: null });
       console.log("node.textContent:", node.textContent);
-
       const text = node.textContent.trim();
       if (text && text.length > 0) {
         console.log("Adding text segment1:", "[", text, "]", text.length);
         segments.push({ value: "", type: "newline", original_latex: null });
         segments.push({ value: text, type: "text", original_latex: null });
-      }else{
-        if (
+      } else if (
           node.childNodes &&
           node.childNodes.length == 1 &&
           node.childNodes[0].nodeName &&
-          node.childNodes[0].nodeName.toLowerCase() === "br".toLowerCase()
-        ){
+          node.childNodes[0].nodeName.toLowerCase() === "br"
+        ) {
           segments.push({ value: "", type: "newline", original_latex: null });
+        }else if (node.nodeName.toLowerCase() === "MATH-FIELD".toLowerCase()) {
+          const value = node.getAttribute("data-latex") || node.textContent;
+          segments.push({
+            value: node.textContent,
+            type: "latex",
+            original_latex: value,
+          });
         }
-      }
+      
     } else if (node.nodeType === Node.TEXT_NODE) {
       const text = node.textContent.trim();
-      if (text && text.length > 0) console.log("Adding text segment2:", text);
-      segments.push({ value: text, type: "text", original_latex: null });
+      if (text && text.length > 0) {
+        console.log("Adding text segment2:", text);
+        segments.push({ value: text, type: "text", original_latex: null });
+      }
     } else if (node.nodeName === "MATH-FIELD") {
       const value = node.getAttribute("data-latex") || node.textContent;
       segments.push({
@@ -116,18 +121,15 @@ const parseContentToSegments = (htmlContent) => {
       });
     } else {
       console.log("node.textContent:", node.textContent);
-
       const text = node.textContent.trim();
       if (text && text.length > 0) {
         console.log("Adding text segment3:", text);
         segments.push({ value: text, type: "text", original_latex: null });
       }
     }
-
-    console.log("segments end:", segments); // Debug log
+    console.log("segments end:", segments);
   });
-
-  console.log("Parsed segments:", segments); // Debug log
+  console.log("Parsed segments:", segments);
   return segments;
 };
 
@@ -142,18 +144,18 @@ function AddQuestion() {
   } = useKnowledgePoints();
   const [formData, setFormData] = useState({
     title: "",
-    segments: [], // Ensure initial value is an array
-    content: "<p>", // Initial content for preview
+    segments: [],
+    content: "<p>",
     difficulty: "easy",
     topic: "algebra",
     knowledgePointIds: [],
-    correctAnswerRelationship: "or", // Default to "or" for multiple correct answers
-    correctAnswer: [{ value: "", type: "latex" }], // Array of correct answers
+    correctAnswerRelationship: "or",
+    correctAnswer: [{ value: "", type: "latex" }],
     questionType: "numerical",
     passValidation: false,
-    isManualEdit: false, // Flag to track manual edits
+    isManualEdit: false,
   });
-  const [testAnswer, setTestAnswer] = useState([{ value: "", type: "latex" }]); // Array of test answers
+  const [testAnswer, setTestAnswer] = useState([{ value: "", type: "latex" }]);
   const [answerFeedback, setAnswerFeedback] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -161,15 +163,14 @@ function AddQuestion() {
   const [saveToDb, setSaveToDb] = useState(false);
   const [aiProvider, setAiProvider] = useState("grok");
 
-  const correctAnswerRefs = useRef([]); // Array of refs for correct answer fields
-  const testAnswerRefs = useRef([]); // Array of refs for test answer fields
+  const correctAnswerRefs = useRef([]);
+  const testAnswerRefs = useRef([]);
   const verifyAnswerButtonRef = useRef(null);
 
   useEffect(() => {
     console.log("Current formData:", formData);
   }, [formData]);
 
-  // Sync segments to content only if not a manual edit
   useEffect(() => {
     console.log("Syncing segments to content");
     if (!formData.isManualEdit) {
@@ -183,20 +184,19 @@ function AddQuestion() {
     }
   }, [formData.segments, formData.isManualEdit]);
 
-  // Handle content changes from QuestionEditor and sync to segments
   const handleContentChange = (content) => {
     console.log("Content changed in editor:", content);
     setFormData((prev) => ({
       ...prev,
       content,
-      isManualEdit: true, // Set flag to prevent overwrite
+      isManualEdit: true,
     }));
   };
 
   const updateCorrectAnswers = () => {
     const newCorrectAnswers = correctAnswerRefs.current.map((ref, index) => ({
       value: ref?.value || formData.correctAnswer[index]?.value || "",
-      type: formData.correctAnswer[index]?.type || "latex", // Preserve or default to "latex"
+      type: formData.correctAnswer[index]?.type || "latex",
     }));
     if (
       JSON.stringify(newCorrectAnswers) !==
@@ -209,24 +209,21 @@ function AddQuestion() {
   const updateTestAnswers = () => {
     const newTestAnswers = testAnswerRefs.current.map((ref, index) => ({
       value: ref?.value || testAnswer[index]?.value || "",
-      type: testAnswer[index]?.type || "latex", // Preserve or default to "latex"
+      type: testAnswer[index]?.type || "latex",
     }));
     if (JSON.stringify(newTestAnswers) !== JSON.stringify(testAnswer)) {
       setTestAnswer(newTestAnswers);
     }
   };
 
-  // Update correct answer values from math-fields
   useEffect(() => {
     updateCorrectAnswers();
   }, [formData.correctAnswer]);
 
-  // Update test answer values from math-fields
   useEffect(() => {
     updateTestAnswers();
   }, [testAnswer]);
 
-  // Handle input changes for each correct answer math-field
   const handleCorrectInput = (index) => (e) => {
     const newRefs = [...correctAnswerRefs.current];
     newRefs[index] = e.target;
@@ -234,12 +231,11 @@ function AddQuestion() {
     const newCorrectAnswers = [...formData.correctAnswer];
     newCorrectAnswers[index] = {
       value: e.target.value || "",
-      type: newCorrectAnswers[index]?.type || "latex", // Preserve existing type
+      type: newCorrectAnswers[index]?.type || "latex",
     };
     setFormData((prev) => ({ ...prev, correctAnswer: newCorrectAnswers }));
   };
 
-  // Handle input changes for each test answer math-field
   const handleTestInput = (index) => (e) => {
     const newRefs = [...testAnswerRefs.current];
     newRefs[index] = e.target;
@@ -247,12 +243,11 @@ function AddQuestion() {
     const newTestAnswers = [...testAnswer];
     newTestAnswers[index] = {
       value: e.target.value || "",
-      type: newTestAnswers[index]?.type || "latex", // Preserve existing type
+      type: newTestAnswers[index]?.type || "latex",
     };
     setTestAnswer(newTestAnswers);
   };
 
-  // Handle test answer input
   useEffect(() => {
     const testMathFields = testAnswerRefs.current;
     testMathFields.forEach((field, index) => {
@@ -307,7 +302,7 @@ function AddQuestion() {
 
     const timeoutPromise = new Promise(
       (_, reject) =>
-        setTimeout(() => reject(new Error("Verification timed out")), 10000) // 10 seconds timeout
+        setTimeout(() => reject(new Error("Verification timed out")), 10000)
     );
 
     try {
@@ -331,12 +326,11 @@ function AddQuestion() {
         },
         config
       );
-      console.log("Response promise created:", responsePromise); // Debug log
+      console.log("Response promise created:", responsePromise);
 
       const response = await Promise.race([responsePromise, timeoutPromise]);
-      console.log("Full Verification response data:", response.data); // Log full response
+      console.log("Full Verification response data:", response.data);
 
-      // Handle multiple correct and test answers using backend results
       if (!response.data.results || !Array.isArray(response.data.results)) {
         console.warn("Invalid results format in response:", response.data);
         setAnswerFeedback(t("Verification failed: Invalid response format"));
@@ -344,7 +338,7 @@ function AddQuestion() {
       }
 
       const results = response.data.results;
-      console.log("Received results:", results); // Debug log for results structure
+      console.log("Received results:", results);
       const feedbackParts = results.map((result) =>
         result.isCorrect
           ? `${t("Test")} '${result.testAnswer}' ${t("is correct")}`
@@ -363,14 +357,14 @@ function AddQuestion() {
           ? t("All test answers are correct")
           : feedbackParts.join(" | ")
       );
-      console.log("Feedback set to:", answerFeedback); // Debug log
+      console.log("Feedback set to:", answerFeedback);
     } catch (err) {
       console.error("Answer verification error:", err);
       console.error("Error response data:", err.response?.data);
       setAnswerFeedback(
         t("Verification failed: ") + (err.response?.data?.detail || err.message)
       );
-      console.log("Error feedback set to:", answerFeedback); // Debug log
+      console.log("Error feedback set to:", answerFeedback);
     } finally {
       setVerifyLoading(false);
       console.log("Finished verification, verifyLoading:", false);
@@ -405,7 +399,7 @@ function AddQuestion() {
         topic: formData.topic,
         save_to_db: saveToDb,
         ai_provider: aiProvider,
-        include_correct_answers: true, // Request correct answers explicitly
+        include_correct_answers: true,
       };
       const response = await generateQuestion(criteria);
       console.log("Generated question response:", response.data);
@@ -423,25 +417,18 @@ function AddQuestion() {
         console.warn("No correct answers received from API, using default.");
       }
       console.log("Updated correct answers before set:", updatedCorrectAnswers);
-      // Update refs to match the new number of correct answers before state set
-      correctAnswerRefs.current = Array(updatedCorrectAnswers.length).fill(
-        null
-      );
+      correctAnswerRefs.current = Array(updatedCorrectAnswers.length).fill(null);
       setFormData((prev) => ({
         ...prev,
         title: response.data.title || "Generated Question",
         segments: response.data.question || [],
         correctAnswer: updatedCorrectAnswers,
         passValidation: response.data.passValidation || false,
-        isManualEdit: false, // Reset flag after generation
+        isManualEdit: false,
       }));
-      console.log("CorrectAnswer after set:", formData.correctAnswer); // Debug log
-      // Invoke function to render and populate correct answer fields
+      console.log("CorrectAnswer after set:", formData.correctAnswer);
       renderCorrectAnswerFields();
-      console.log(
-        "Refs length after update:",
-        correctAnswerRefs.current.length
-      ); // Debug log
+      console.log("Refs length after update:", correctAnswerRefs.current.length);
     } catch (err) {
       console.error("Error generating question:", err);
       toast.error(t("Failed to generate question"));
@@ -450,12 +437,8 @@ function AddQuestion() {
     }
   };
 
-  // Function to dynamically render correct answer fields
   const renderCorrectAnswerFields = () => {
-    console.log(
-      "Rendering correct answer fields with:",
-      formData.correctAnswer
-    );
+    console.log("Rendering correct answer fields with:", formData.correctAnswer);
     console.log("corectAnswer in formData:", formData.correctAnswer);
     if (!formData.correctAnswer || formData.correctAnswer.length === 0) {
       return (
@@ -519,7 +502,6 @@ function AddQuestion() {
     ));
   };
 
-  // Function to dynamically render test answer fields
   const renderTestAnswerFields = () => {
     console.log("Rendering test answer fields with:", testAnswer);
     if (!testAnswer || testAnswer.length === 0) {
@@ -611,7 +593,6 @@ function AddQuestion() {
       ...prev,
       correctAnswer: [...prev.correctAnswer, { value: "", type: "latex" }],
     }));
-    // Ensure refs array is updated
     correctAnswerRefs.current = [...correctAnswerRefs.current, null];
   };
 
@@ -626,7 +607,6 @@ function AddQuestion() {
         });
         return;
       }
-      // Validate that segments is not empty and has at least one non-empty value
       console.log("formData:", formData);
       formData.segments = parseContentToSegments(formData.content);
 
@@ -645,8 +625,8 @@ function AddQuestion() {
       try {
         await addQuestion({
           ...formData,
-          question: formData.segments, // Send segments array to backend
-          correctAnswer: formData.correctAnswer, // Send array of correct answers
+          question: formData.segments,
+          correctAnswer: formData.correctAnswer,
         });
         toast.success(t("question_added"), {
           toastId: "add-question-success",
@@ -658,7 +638,7 @@ function AddQuestion() {
             ? err.response.data.detail[0]?.msg || t("failed_to_add_question")
             : err.response.data.detail
           : t("failed_to_add_question");
-        console.log("Submission error details:", err.response?.data); // Debug log
+        console.log("Submission error details:", err.response?.data);
         setError(errorMsg);
         toast.error(errorMsg, { toastId: "add-question-error" });
       } finally {
@@ -672,7 +652,6 @@ function AddQuestion() {
     .map((id) => knowledgePoints.find((kp) => kp.id === id))
     .filter((kp) => kp);
 
-  // Enable "Verify Answer" button when correctAnswer and testAnswer are not empty
   useEffect(() => {
     const hasCorrectAnswers = formData.correctAnswer.some((ans) => ans.value);
     const hasTestAnswers = testAnswer.some((ans) => ans.value);
@@ -691,9 +670,9 @@ function AddQuestion() {
   }, [formData.correctAnswer, testAnswer, verifyLoading]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8 flex items-center justify-center">
-      {console.log("Rendering AddQuestion with formData:", formData)}
-      <div className="max-w-6xl w-full bg-white rounded-xl shadow-md p-6 sm:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <Navigation />
+      <div className="max-w-6xl mx-auto p-4 sm:p-6 md:p-8">
         <Link
           to="/admin-dashboard"
           className="text-indigo-600 hover:text-indigo-800 font-medium text-sm mb-4 inline-block"
@@ -898,7 +877,6 @@ function AddQuestion() {
               {t("Add Another Correct Answer")}
             </button>
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700">
               {t("Test Answer(s)")}
@@ -912,7 +890,6 @@ function AddQuestion() {
               {t("Add Another Test Answer")}
             </button>
           </div>
-
           <button
             ref={verifyAnswerButtonRef}
             type="button"
