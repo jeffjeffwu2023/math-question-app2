@@ -187,12 +187,37 @@ const Login = () => {
             </button>
           </form>
 
+          {/* Divider */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white/95 text-gray-500">or</span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => navigate("/signup")}
+            className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-green-600 hover:to-emerald-700 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
+          >
+            Create New Account
+          </button>
+
+          
+
+          
+          
+
           {/* Footer */}
           <div className="mt-8 text-center">
             <p className="text-sm text-gray-500">
               Secure login powered by advanced authentication
             </p>
           </div>
+
+          
         </div>
       </div>
     </div>

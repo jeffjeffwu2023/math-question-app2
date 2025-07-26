@@ -46,6 +46,16 @@ export const login = (email, password) => {
   return API.post("/api/auth/login/", { email, password });
 };
 
+export const signup = (userData) => {
+  console.log("Signing up with data:", userData);
+  return API.post("/api/users/signup", userData);
+};
+
+export const googleAuth = (code) => {
+  console.log("Google auth with code:", code);
+  return API.post("/api/auth/google", { code });
+};
+
 // User endpoints
 export const getUsers = (filters = {}) =>
   API.get("/api/users/", { params: filters });
