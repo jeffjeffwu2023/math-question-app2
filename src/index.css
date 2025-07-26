@@ -33,6 +33,133 @@
   @apply animate-[fadeIn_0.5s_ease-in];
 }
 
+/* CD-ROM Style Horizontal Sliding Animations */
+@keyframes slide-right-slow {
+  0% { 
+    transform: translateX(-100px); 
+    opacity: 0;
+  }
+  10% { 
+    opacity: 0.7;
+  }
+  90% { 
+    opacity: 0.7;
+  }
+  100% { 
+    transform: translateX(calc(100vw + 100px)); 
+    opacity: 0;
+  }
+}
+
+@keyframes slide-right-medium {
+  0% { 
+    transform: translateX(-100px); 
+    opacity: 0;
+  }
+  10% { 
+    opacity: 0.8;
+  }
+  90% { 
+    opacity: 0.8;
+  }
+  100% { 
+    transform: translateX(calc(100vw + 100px)); 
+    opacity: 0;
+  }
+}
+
+@keyframes slide-right-fast {
+  0% { 
+    transform: translateX(-100px); 
+    opacity: 0;
+  }
+  10% { 
+    opacity: 0.9;
+  }
+  90% { 
+    opacity: 0.9;
+  }
+  100% { 
+    transform: translateX(calc(100vw + 100px)); 
+    opacity: 0;
+  }
+}
+
+@keyframes slide-left-slow {
+  0% { 
+    transform: translateX(calc(100vw + 100px)); 
+    opacity: 0;
+  }
+  10% { 
+    opacity: 0.7;
+  }
+  90% { 
+    opacity: 0.7;
+  }
+  100% { 
+    transform: translateX(-100px); 
+    opacity: 0;
+  }
+}
+
+@keyframes slide-left-medium {
+  0% { 
+    transform: translateX(calc(100vw + 100px)); 
+    opacity: 0;
+  }
+  10% { 
+    opacity: 0.8;
+  }
+  90% { 
+    opacity: 0.8;
+  }
+  100% { 
+    transform: translateX(-100px); 
+    opacity: 0;
+  }
+}
+
+@keyframes slide-left-fast {
+  0% { 
+    transform: translateX(calc(100vw + 100px)); 
+    opacity: 0;
+  }
+  10% { 
+    opacity: 0.9;
+  }
+  90% { 
+    opacity: 0.9;
+  }
+  100% { 
+    transform: translateX(-100px); 
+    opacity: 0;
+  }
+}
+
+.animate-slide-right-slow {
+  animation: slide-right-slow 8s linear infinite;
+}
+
+.animate-slide-right-medium {
+  animation: slide-right-medium 6s linear infinite;
+}
+
+.animate-slide-right-fast {
+  animation: slide-right-fast 4s linear infinite;
+}
+
+.animate-slide-left-slow {
+  animation: slide-left-slow 8s linear infinite;
+}
+
+.animate-slide-left-medium {
+  animation: slide-left-medium 6s linear infinite;
+}
+
+.animate-slide-left-fast {
+  animation: slide-left-fast 4s linear infinite;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
