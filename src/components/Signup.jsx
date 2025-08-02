@@ -90,8 +90,8 @@ const Signup = () => {
   };
 
   const handleGoogleSignup = () => {
-    // Google OAuth client ID - you'll need to get this from Google Cloud Console
-    const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
+    // Google OAuth client ID from Google Cloud Console
+    const GOOGLE_CLIENT_ID = "465566550110-dcteoks3mttkthsqp6nsjsrbs50toa4b.apps.googleusercontent.com";
     const REDIRECT_URI = "http://localhost:5173/auth/google/callback";
     
     // Google OAuth URL
