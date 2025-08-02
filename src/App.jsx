@@ -20,6 +20,8 @@ import KnowledgePointManagement from "./components/KnowledgePointManagement";
 import ManagerManagement from "./components/ManagerManagement";
 import ClassroomChart from "./components/ClassroomChart";
 import LandingPage from "./components/LandingPage";
+import Signup from "./components/Signup";
+import GoogleAuthCallback from "./components/GoogleAuthCallback";
 
 function App() {
   return (
@@ -163,6 +165,8 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/auth/google/callback" element={<GoogleAuthCallback />} />
       </Routes>
     </I18nextProvider>
   );
